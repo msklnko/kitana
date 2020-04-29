@@ -1,7 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/msklnko/kitana/cmd"
+	"os"
+)
+
+func init() {
+}
 
 func main() {
-	fmt.Println("Hello, kitana.")
+	if err := cmd.KitanaCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 }
