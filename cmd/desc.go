@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"github.com/msklnko/kitana/db"
 	"github.com/spf13/cobra"
+	"os"
+	"regexp"
 	"strings"
 )
 
+// Show table structure
 var descCmd = &cobra.Command{
 	Use:   "desc",
 	Short: "Used either to obtain information about table structure",
@@ -37,8 +40,10 @@ var descCmd = &cobra.Command{
 	},
 }
 
+// Show all tables from db with partition configs
 var showCmd = &cobra.Command{
-	Use: "show",
+	Use:   "show",
+	Short: "Show all tables",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("missed schema name")
@@ -50,6 +55,9 @@ var showCmd = &cobra.Command{
 	},
 }
 
+// Add comment to table
+var cmtPattern *regexp.Regexp
+
 var alterCmtCmd = &cobra.Command{
 	Use:     "cmt",
 	Aliases: []string{"addComment"},
@@ -59,9 +67,14 @@ var alterCmtCmd = &cobra.Command{
 		"\tT - partitioning type, m for monthly\n" +
 		"\tR - retention policy - d (drop), n (none), b (backup)\n" +
 		"\tR - retention policy - d (drop), n (none), b (backup)\n",
-	Args: func(cmd *cobra.Command, args []string) error {
-		cobra.RangeArgs(2, 2)
-		return nil
+	Args: cobra.MinimumNArgs(2),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		cmt := args[1]
+		matchString := cmtPattern.MatchString(cmt)
+		if !matchString {
+			fmt.Println("invalid comment format, should be [GM:C:T:R:Rc]")
+			os.Exit(1)
+		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
@@ -70,6 +83,9 @@ var alterCmtCmd = &cobra.Command{
 }
 
 func init() {
+	// Regexp for comment
+	cmtPattern = regexp.MustCompile(`(?m)^\[GM:\w+:(m|d):(d|n|b):\d\]$`)
+
 	// Add command
 	KitanaCmd.AddCommand(descCmd)
 	descCmd.Flags().BoolP("comment", "c", false, "Show table comment")

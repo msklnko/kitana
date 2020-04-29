@@ -33,11 +33,11 @@ func AlterComment(sh, tb, cmt string) {
 	db := conn(sh)
 	defer db.Close()
 
-	res, err := db.Exec("ALTER TABLE " + sh + "." + tb + " COMMENT = '" + cmt + "'")
+	_, err := db.Query("ALTER TABLE " + sh + "." + tb + " COMMENT = '" + cmt + "'")
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Println(res)
+	fmt.Println("OK")
 }
 
 func ShowTables(sh string) {
