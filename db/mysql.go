@@ -10,9 +10,10 @@ import (
 	"time"
 )
 
-func conn(sh string) (db *sql.DB) {
-	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3308)/"+sh)
+var db sql.DB
 
+func init() {
+	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3308)/wms")
 	// if there is an error opening the connection, handle it
 	if err != nil {
 		panic(err.Error())
@@ -20,23 +21,17 @@ func conn(sh string) (db *sql.DB) {
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
-	return db
+	defer db.Close()
 }
 
-// Execute `ALTER COMMENT schema.table`
+// AlterComment Execute `ALTER COMMENT schema.table`
 func AlterComment(sh, tb, cmt string) {
-	db := conn(sh)
-	defer db.Close()
-
 	_, err := db.Query("alter table " + sh + "." + tb + " comment = '" + cmt + "'")
 	util.Er(err)
 }
 
-// Execute `SHOW CREATE TABLE schema.table`
+// ShowCreateTable Execute `SHOW CREATE TABLE schema.table`
 func ShowCreateTable(sh, tb string) {
-	db := conn(sh)
-	defer db.Close()
-
 	desc, err := db.Query("show create table " + sh + "." + tb)
 	util.Er(err)
 
@@ -52,10 +47,8 @@ func ShowCreateTable(sh, tb string) {
 	}
 }
 
+// ShowTables Show tables for db schema
 func ShowTables(sh string) {
-	db := conn(sh)
-	defer db.Close()
-
 	tbls, _ := db.Query("show tables")
 	var table string
 	//var desc Table
@@ -68,10 +61,8 @@ func ShowTables(sh string) {
 	fmt.Println("[", sh, "] Count :", count)
 }
 
+// CheckTablePresent Check provided table is present
 func CheckTablePresent(sh, tb string) bool {
-	db := conn(sh)
-	defer db.Close()
-
 	var res sql.NullInt32
 	err := db.QueryRow("select 1 from information_schema.tables " +
 		"where table_schema = '" + sh + "' and table_name = '" + tb + "'").Scan(&res)
@@ -80,10 +71,8 @@ func CheckTablePresent(sh, tb string) bool {
 	return res.Valid
 }
 
+// InformSchema Show info about partitions (for not partitioned table just count of rows)
 func InformSchema(sh, tb string) {
-	db := conn(sh)
-	defer db.Close()
-
 	// Query
 	rows, err := db.Query("select " +
 		"partition_name, " +
@@ -129,15 +118,15 @@ func InformSchema(sh, tb string) {
 	}
 }
 
-func Partition(sh, tb, name, limiter string) {
-	db := conn(sh)
+// AddPartition Add partition
+func AddPartition(sh, tb, name, limiter string) {
 	_, err := db.Query("alter table " + sh + "." + tb +
 		" add partition (partition " + name + " values less than (" + limiter + "))")
 	util.Er(err)
 }
 
+// DropPartition Drop partition(s) by name
 func DropPartition(sh, tb, partition string) {
-	db := conn(sh)
 	_, err := db.Query("alter table " + sh + "." + tb + " drop partition " + partition)
 	util.Er(err)
 }

@@ -37,7 +37,7 @@ var prtAdd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
-		db.Partition(tbls[0], tbls[1], args[1], args[2])
+		db.AddPartition(tbls[0], tbls[1], args[1], args[2])
 
 		show, err := cmd.Flags().GetBool("show")
 		util.Er(err)

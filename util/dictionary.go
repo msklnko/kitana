@@ -2,17 +2,18 @@ package util
 
 import "errors"
 
+// RetentionPolicy - retention policy for partitioned tables
 type RetentionPolicy string
 
 const (
-	N = "none"
-	D = "drop"
-	B = "backup"
+	n = "none"
+	d = "drop"
+	b = "backup"
 )
 
 func isValid(rp RetentionPolicy) {
 	switch rp {
-	case N, D, B:
+	case n, b, d:
 	}
 	Er(errors.New("invalid retention policy"))
 }

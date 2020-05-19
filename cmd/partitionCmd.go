@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// KitanaCmd main command
 var KitanaCmd = &cobra.Command{}
 
 func init() {
