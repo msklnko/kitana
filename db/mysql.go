@@ -135,3 +135,9 @@ func Partition(sh, tb, name, limiter string) {
 		" add partition (partition " + name + " values less than (" + limiter + "))")
 	util.Er(err)
 }
+
+func DropPartition(sh, tb, partition string) {
+	db := conn(sh)
+	_, err := db.Query("alter table " + sh + "." + tb + " drop partition " + partition)
+	util.Er(err)
+}

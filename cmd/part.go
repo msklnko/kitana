@@ -59,3 +59,23 @@ var prtStatus = &cobra.Command{
 		db.InformSchema(tbls[0], tbls[1])
 	},
 }
+
+var prtDrop = &cobra.Command{
+	Use:     "dtop",
+	Aliases: []string{"rm"},
+	Short:   "Drop partition",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return errors.New("table name is missing")
+		}
+		var tbls = strings.Split(args[0], ".")
+		if len(tbls) != 2 {
+			return errors.New("invalid property, should be schema+table name")
+		}
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		var tbls = strings.Split(args[0], ".")
+		db.DropPartition(tbls[0], tbls[1], args[1])
+	},
+}
