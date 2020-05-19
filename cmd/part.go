@@ -7,10 +7,43 @@ import (
 	"strings"
 )
 
-// Show table structure
-var partCmd = &cobra.Command{
+var prtCmd = &cobra.Command{
 	Use:   "prt",
 	Short: "Used either to obtain information about information_schema.partitions",
+}
+
+var prtAdd = &cobra.Command{
+	Use:   "add",
+	Short: "Add partition",
+	Args: func(cmd *cobra.Command, args []string) error {
+		switch l := len(args); l {
+		case 0:
+			return errors.New("missing arguments (table, name, limiter)")
+		case 1:
+			var tbls = strings.Split(args[0], ".")
+			if len(tbls) != 2 {
+				return errors.New("invalid property, should be schema+table name")
+			}
+			if !db.CheckTablePresent(tbls[0], tbls[1]) {
+				return errors.New("Table " + args[0] + " does not exist")
+			}
+			return errors.New("partition name and limiter are missing")
+		case 2:
+			return errors.New("limiter is missing")
+		default:
+			return nil
+		}
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		var tbls = strings.Split(args[0], ".")
+		db.Partition(tbls[0], tbls[1], args[1], args[2])
+	},
+}
+
+var prtStatus = &cobra.Command{
+	Use:     "status",
+	Aliases: []string{"st", "info"},
+	Short:   "Show info about partitions",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("table name is missing")

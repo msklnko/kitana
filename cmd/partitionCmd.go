@@ -8,8 +8,11 @@ var KitanaCmd = &cobra.Command{}
 
 func init() {
 	// Add command
-	KitanaCmd.AddCommand(partCmd)
-	//descCmd.Flags().BoolP("show", "s", true, "Show create table")
+	KitanaCmd.AddCommand(prtCmd)
+	prtCmd.AddCommand(prtStatus)
+	prtCmd.AddCommand(prtAdd)
+	//prtCmd.Flags().BoolP("show", "s", false, "Show partitions")
+	//prtCmd.Flags().StringP("create", "c", "", "Create partition")
 
 	KitanaCmd.AddCommand(showCmd)
 	KitanaCmd.AddCommand(alterCmtCmd)
