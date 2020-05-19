@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"github.com/msklnko/kitana/db"
+	"github.com/msklnko/kitana/util"
 	"github.com/spf13/cobra"
 	"strings"
 )
@@ -37,6 +38,13 @@ var prtAdd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
 		db.Partition(tbls[0], tbls[1], args[1], args[2])
+
+		show, err := cmd.Flags().GetBool("show")
+		util.Er(err)
+
+		if show {
+			db.InformSchema(tbls[0], tbls[1])
+		}
 	},
 }
 
@@ -61,7 +69,7 @@ var prtStatus = &cobra.Command{
 }
 
 var prtDrop = &cobra.Command{
-	Use:     "dtop",
+	Use:     "drop",
 	Aliases: []string{"rm"},
 	Short:   "Drop partition",
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -77,5 +85,12 @@ var prtDrop = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
 		db.DropPartition(tbls[0], tbls[1], args[1])
+
+		show, err := cmd.Flags().GetBool("show")
+		util.Er(err)
+
+		if show {
+			db.InformSchema(tbls[0], tbls[1])
+		}
 	},
 }
