@@ -10,18 +10,19 @@ import (
 	"time"
 )
 
-var db sql.DB
+var db *sql.DB
 
 func init() {
-	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3308)/wms")
-	// if there is an error opening the connection, handle it
+	d, err := sql.Open("mysql",
+		util.Configuration.Database.Username+":"+util.Configuration.Database.Password+
+			"@tcp("+util.Configuration.Database.Host+":"+util.Configuration.Database.Port+")/")
 	if err != nil {
-		panic(err.Error())
+		util.Er(err)
 	}
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(25)
-	db.SetConnMaxLifetime(5 * time.Minute)
-	defer db.Close()
+	db = d
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(2 * time.Minute)
 }
 
 // AlterComment Execute `ALTER COMMENT schema.table`
