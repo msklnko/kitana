@@ -5,16 +5,17 @@ import (
 	"os"
 )
 
-type Config struct {
+type config struct {
 	Database struct {
-		Host string `yaml:"host"`
+		Host     string `yaml:"host"`
 		Port     string `yaml:"port"`
 		Username string `yaml:"user"`
 		Password string `yaml:"pass"`
 	} `yaml:"database"`
 }
 
-var Configuration Config
+// Configuration Application config from settings.yaml file
+var Configuration config
 
 func init() {
 	f, err := os.Open("./settings.yaml")
