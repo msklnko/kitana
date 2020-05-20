@@ -50,7 +50,7 @@ func ShowCreateTable(sh, tb string) {
 
 // ShowTables Show tables for db schema
 func ShowTables(sh string) {
-	tbls, _ := db.Query("show tables")
+	tbls, _ := db.Query("show tables from " + sh)
 	var table string
 	//var desc Table
 	var count int

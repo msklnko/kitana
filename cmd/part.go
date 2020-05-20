@@ -73,14 +73,21 @@ var prtDrop = &cobra.Command{
 	Aliases: []string{"rm"},
 	Short:   "Drop partition",
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return errors.New("table name is missing")
+		switch l := len(args); l {
+		case 0:
+			return errors.New("missing arguments (table, partition name)")
+		case 1:
+			var tbls = strings.Split(args[0], ".")
+			if len(tbls) != 2 {
+				return errors.New("invalid property, should be schema+table name")
+			}
+			if !db.CheckTablePresent(tbls[0], tbls[1]) {
+				return errors.New("Table " + args[0] + " does not exist")
+			}
+			return errors.New("partition name is missing")
+		default:
+			return nil
 		}
-		var tbls = strings.Split(args[0], ".")
-		if len(tbls) != 2 {
-			return errors.New("invalid property, should be schema+table name")
-		}
-		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
