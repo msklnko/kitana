@@ -16,6 +16,10 @@ func init() {
 	//prtCmd.Flags().StringP("create", "c", "", "Create partition")
 
 	KitanaCmd.AddCommand(showCmd)
+	showCmd.Flags().BoolP("partitioned", "p", false, "Show only partitioned tables")
+	showCmd.Flags().BoolP("comment", "c", false, "Show only commented tables")
+	showCmd.Flags().BoolP("definition", "d", false, "Show comment definition")
+
 	KitanaCmd.AddCommand(alterCmtCmd)
 	alterCmtCmd.Flags().BoolP("show", "s", false, "Show create table")
 }

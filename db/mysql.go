@@ -5,7 +5,6 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/msklnko/kitana/util"
-	"os"
 	"text/tabwriter"
 	"time"
 )
@@ -49,17 +48,42 @@ func ShowCreateTable(sh, tb string) {
 }
 
 // ShowTables Show tables for db schema
-func ShowTables(sh string) {
-	tbls, _ := db.Query("show tables from " + sh)
-	var table string
+func ShowTables(sh string, comment, part, def bool) {
+	var query = "select table_name, table_comment from information_schema.tables where table_schema=\"" + sh + "\""
+	if comment {
+		query = query + " and table_comment !=''"
+	} else if part {
+		query = query + " and table_comment like '%" + util.PartIdentification + "%'"
+	}
+
+	tbls, err := db.Query(query)
+	util.Er(err)
+
 	//var desc Table
 	var count int
+	type row struct {
+		name    string
+		comment sql.NullString
+	}
+	var parsed []row
 	for tbls.Next() {
-		_ = tbls.Scan(&table)
-		fmt.Println(table)
+		var r row
+		err := tbls.Scan(&r.name, &r.comment)
+		util.Er(err)
+		parsed = append(parsed, r)
 		count++
 	}
-	fmt.Println("[", sh, "] Count :", count)
+
+	// Print
+	if len(parsed) > 0 {
+		util.Print(util.Ternar(def, "Name\tComment\t", ""),
+			func(w *tabwriter.Writer) {
+				for _, s := range parsed {
+					_, _ = fmt.Fprintf(w, "%s\t%s\n", s.name, s.comment.String)
+				}
+			})
+		fmt.Println("[", sh, "] Count :", count)
+	}
 }
 
 // CheckTablePresent Check provided table is present
@@ -103,17 +127,15 @@ func InformSchema(sh, tb string) {
 
 	// Print
 	if len(parsed) > 0 {
-		// Format in tab-separated columns with a tab stop of 8.
-		w := new(tabwriter.Writer)
-		w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-		_, _ = fmt.Fprintln(w, "Name\tExpression\tRows\tCreatedAt\tTill\t")
-
-		for _, s := range parsed {
-			_, _ = fmt.Fprintf(w,
-				"%s\t%s\t%d\t%s\t%s\n",
-				s.name.String, s.expr.String, s.count.Int64, s.cr.String, s.desc.String)
-		}
-		_ = w.Flush()
+		util.Print(
+			"Name\tExpression\tRows\tCreatedAt\tTill\t",
+			func(w *tabwriter.Writer) {
+				for _, s := range parsed {
+					_, _ = fmt.Fprintf(w,
+						"%s\t%s\t%d\t%s\t%s\n",
+						s.name.String, s.expr.String, s.count.Int64, s.cr.String, s.desc.String)
+				}
+			})
 	} else {
 		fmt.Printf("Table '%s' doesn't exist\n", sh+"."+tb)
 	}

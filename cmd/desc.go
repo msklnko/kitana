@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/msklnko/kitana/db"
+	"github.com/msklnko/kitana/util"
 	"github.com/spf13/cobra"
 	"os"
-	"regexp"
 	"strings"
 )
 
@@ -21,12 +21,13 @@ var showCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		db.ShowTables(args[0])
+		partitioned, err := cmd.Flags().GetBool("partitioned")
+		comment, err := cmd.Flags().GetBool("comment")
+		def, err := cmd.Flags().GetBool("definition")
+		util.Er(err)
+		db.ShowTables(args[0], comment, partitioned, def)
 	},
 }
-
-// Add comment to table
-var cmtPattern *regexp.Regexp
 
 var alterCmtCmd = &cobra.Command{
 	Use:     "cmt",
@@ -40,7 +41,7 @@ var alterCmtCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
 	PreRun: func(cmd *cobra.Command, args []string) {
 		cmt := args[1]
-		matchString := cmtPattern.MatchString(cmt)
+		matchString := util.CmtPattern.MatchString(cmt)
 		if !matchString {
 			fmt.Println("invalid comment format, should be [GM:C:T:R:Rc]")
 			os.Exit(1)
@@ -51,17 +52,9 @@ var alterCmtCmd = &cobra.Command{
 		db.AlterComment(tbls[0], tbls[1], args[1])
 
 		value, err := cmd.Flags().GetBool("show")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		util.Er(err)
 		if value {
 			db.ShowCreateTable(tbls[0], tbls[1])
 		}
 	},
-}
-
-func init() {
-	// Regexp for comment
-	cmtPattern = regexp.MustCompile(`(?m)^\[GM:\w+:(m|d):(d|n|b):\d\]$`)
 }
