@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/msklnko/kitana/cmt"
 	"github.com/msklnko/kitana/util"
+	"strings"
 	"text/tabwriter"
 	"time"
 )
@@ -54,7 +55,7 @@ func ShowTables(sh string, comment, part, def bool) {
 	if comment {
 		query = query + " and table_comment !=''"
 	} else if part {
-		query = query + " and table_comment like '%" + util.PartIdentification + "%'"
+		query = query + " and table_comment like '%" + cmt.PartIdentification + "%'"
 	}
 
 	tbls, err := db.Query(query)
@@ -77,11 +78,12 @@ func ShowTables(sh string, comment, part, def bool) {
 
 	// Print
 	if len(parsed) > 0 {
-		util.Print(util.Ternar(def, "Name\tComment\tDefinition\t", "Name\tComment\t"),
+		util.Print(util.Ternary(def, "Name\tComment\tDefinition\t", "Name\tComment\t"),
 			func(w *tabwriter.Writer) {
 				for _, s := range parsed {
 					if def {
-						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", s.name, s.comment.String, cmt.Def(s.comment.String))
+						_, def := cmt.Def(s.comment.String)
+						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", s.name, s.comment.String, def)
 					} else {
 						_, _ = fmt.Fprintf(w, "%s\t%s\n", s.name, s.comment.String)
 					}
@@ -101,55 +103,88 @@ func CheckTablePresent(sh, tb string) bool {
 	return res.Valid
 }
 
-// InformSchema Show info about partitions (for not partitioned table just count of rows)
-func InformSchema(sh, tb string) {
-	// Query
+// TODO ask
+type Partition struct {
+	Name  string
+	Expr  string
+	Count int64
+	Cr    string
+	Desc  int64
+}
+
+// InformSchema Shows info about partitions, bool flag identifies table doesn't partitioned or does not exist at all
+func InformSchema(sh, tb string) ([]Partition, bool, string) {
 	rows, err := db.Query("select " +
-		"partition_name, " +
-		"partition_expression, " +
-		"table_rows, " +
-		"create_time, " +
-		"partition_description " +
-		"from information_schema.partitions " +
-		"where table_name='" + tb + "' and table_schema= '" + sh + "'")
+		"create_options, " +
+		"table_comment, " +
+		"p.partition_name, " +
+		"p.partition_expression, " +
+		"p.table_rows, " +
+		"p.create_time, " +
+		"p.partition_description " +
+		"from information_schema.tables t join information_schema.partitions p on p.table_name = t.table_name " +
+		"where t.table_name='" + tb + "' and t.table_schema= '" + sh + "'")
 	util.Er(err)
 
 	// Parse
 	type row struct {
-		name  sql.NullString
-		expr  sql.NullString
-		count sql.NullInt64
-		cr    sql.NullString
-		desc  sql.NullString
+		status  sql.NullString
+		comment sql.NullString
+		name    sql.NullString
+		expr    sql.NullString
+		count   sql.NullInt64
+		cr      sql.NullString
+		desc    sql.NullInt64
 	}
 	var parsed []row
 	for rows.Next() {
 		var r row
-		err := rows.Scan(&r.name, &r.expr, &r.count, &r.cr, &r.desc)
+		err := rows.Scan(&r.status, &r.comment, &r.name, &r.expr, &r.count, &r.cr, &r.desc)
 		util.Er(err)
 		parsed = append(parsed, r)
 	}
 
-	// Print
-	if len(parsed) > 0 {
-		util.Print(
-			"Name\tExpression\tRows\tCreatedAt\tTill\t",
-			func(w *tabwriter.Writer) {
-				for _, s := range parsed {
-					_, _ = fmt.Fprintf(w,
-						"%s\t%s\t%d\t%s\t%s\n",
-						s.name.String, s.expr.String, s.count.Int64, s.cr.String, s.desc.String)
-				}
-			})
-	} else {
-		fmt.Printf("Table '%s' doesn't exist\n", sh+"."+tb)
+	// Table does not exist
+	if len(parsed) == 0 {
+		return []Partition{}, false, ""
 	}
+
+	// Table exist but not partitioned
+	if len(parsed) == 1 && parsed[0].status.String != "partitioned" {
+		return []Partition{}, true, parsed[0].comment.String
+	}
+
+	s := make([]Partition, len(parsed))
+	for i := 0; i < len(parsed); i++ {
+		r := parsed[i]
+		s[i] = Partition{Name: r.name.String, Expr: r.expr.String, Count: r.count.Int64,
+			Cr: r.cr.String, Desc: r.desc.Int64}
+	}
+	return s, true, parsed[0].comment.String
 }
 
 // AddPartition Add partition
 func AddPartition(sh, tb, name, limiter string) {
 	_, err := db.Query("alter table " + sh + "." + tb +
 		" add partition (partition " + name + " values less than (" + limiter + "))")
+	util.Er(err)
+}
+
+// AddPartitions Add partitions to existing partitioned table
+func AddPartitions(sh, tb string, partitions map[string]int64) {
+	if len(partitions) == 0 {
+		//Nothing to alter
+		return
+	}
+
+	// Build sql for each partition
+	var ps []string
+	for n, l := range partitions {
+		ps = append(ps, " partition "+n+" values less than ("+string(l)+") ")
+	}
+
+	// Alter
+	_, err := db.Query("alter table " + sh + "." + tb + " add partition (" + strings.Join(ps[:], ",") + ")")
 	util.Er(err)
 }
 

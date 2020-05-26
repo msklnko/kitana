@@ -2,43 +2,54 @@ package cmt
 
 import (
 	"github.com/msklnko/kitana/util"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-func Def(cmt string) string {
+// CmtPattern Partitioned comment pattern
+var CommentPattern *regexp.Regexp
+var PartIdentification string = "GM"
+
+func init() {
+	// Regexp for comment
+	CommentPattern = regexp.MustCompile(`(?m)^\[GM:\w+:(ml|dl):(d|n|b):\d\]$`)
+}
+
+func Def(cmt string) (*Definition, string) {
+	definition := Definition{}
 	if cmt == "" {
-		return ""
+		return &definition, ""
 	}
 
-	if !util.CmtPattern.MatchString(cmt) {
-		return "comment " + cmt + " did not match with partitioning rules"
+	if !CommentPattern.MatchString(cmt) {
+		return &definition, "comment " + cmt + " did not match with partitioning rules"
 	}
 
 	parts := strings.Split(cmt[1:len(cmt)-1], ":")
 	if len(parts) != 5 {
-		return "comment " + cmt + " did not match with partitioning rules"
+		return &definition, "comment " + cmt + " did not match with partitioning rules"
 	}
 
 	cnt, err := strconv.Atoi(parts[4])
 	util.Er(err)
-	definition := Definition{
-		column:        parts[1],
-		partitionType: parts[2],
-		rp:            toRP(parts[3]),
-		count:         cnt,
+	definition = Definition{
+		Column:        parts[1],
+		PartitionType: toType(parts[2]),
+		Rp:            toRP(parts[3]),
+		Count:         cnt,
 	}
 
-	return "Partitioned by:`" + definition.column +
-		"`; type:`" + definition.partitionType +
-		"`; retention policy:`" + definition.rp.toString() +
-		"`; count:" + strconv.Itoa(definition.count)
+	return &definition, "Partitioned by:`" + definition.Column +
+		"`; type:`" + definition.PartitionType.toString() +
+		"`; retention policy:`" + definition.Rp.toString() +
+		"`; count:" + strconv.Itoa(definition.Count)
 }
 
 // Comment structure
 type Definition struct {
-	column        string          //column name for partitioning
-	partitionType string          // partitioning type
-	rp            RetentionPolicy // retention policy
-	count         int             // retention policy old partitions count
+	Column        string          //column name for partitioning
+	PartitionType Type            // partitioning type
+	Rp            RetentionPolicy // retention policy
+	Count         int             // retention policy old partitions count
 }

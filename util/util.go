@@ -3,18 +3,8 @@ package util
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"text/tabwriter"
 )
-
-// CmtPattern Partitioned comment pattern
-var CmtPattern *regexp.Regexp
-var PartIdentification string = "GM"
-
-func init() {
-	// Regexp for comment
-	CmtPattern = regexp.MustCompile(`(?m)^\[GM:\w+:(m|d):(d|n|b):\d\]$`)
-}
 
 // Er Print error and stop application
 func Er(err error) {
@@ -36,7 +26,7 @@ func Print(headers string, fn Iterate) {
 
 type Iterate func(*tabwriter.Writer)
 
-func Ternar(condition bool, case1, case2 string) string {
+func Ternary(condition bool, case1, case2 string) string {
 	if condition {
 		return case1
 	} else {

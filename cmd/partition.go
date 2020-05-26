@@ -3,10 +3,19 @@ package cmd
 import (
 	"errors"
 	"github.com/msklnko/kitana/db"
+	"github.com/msklnko/kitana/prt"
 	"github.com/msklnko/kitana/util"
 	"github.com/spf13/cobra"
+	"regexp"
+	"strconv"
 	"strings"
 )
+
+var prtCount *regexp.Regexp
+
+func init() {
+	prtCount = regexp.MustCompile(`(?m)^\+\d*$`)
+}
 
 var prtCmd = &cobra.Command{
 	Use:   "prt",
@@ -19,17 +28,23 @@ var prtAdd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) error {
 		switch l := len(args); l {
 		case 0:
-			return errors.New("missing arguments (table, name, limiter)")
+			return errors.New("missing arguments (table, name, limiter)." +
+				" Also (+) with count of partitions could be used")
 		case 1:
 			var tbls = strings.Split(args[0], ".")
 			if len(tbls) != 2 {
 				return errors.New("invalid property, should be schema+table name")
 			}
 			if !db.CheckTablePresent(tbls[0], tbls[1]) {
-				return errors.New("Table " + args[0] + " does not exist")
+				return errors.New("table " + args[0] + " does not exist")
 			}
-			return errors.New("partition name and limiter are missing")
+			return errors.New("partition name and limiter are missing" +
+				" Also (+) with count of partitions could be used")
 		case 2:
+			if prtCount.MatchString(args[1]) {
+				// Means that `alias` was used to add partitions //TODO
+				return nil
+			}
 			return errors.New("limiter is missing")
 		default:
 			return nil
@@ -37,13 +52,20 @@ var prtAdd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
-		db.AddPartition(tbls[0], tbls[1], args[1], args[2])
+
+		if len(args) == 2 {
+			cnt, err := strconv.Atoi(args[1][1:len(args[1])])
+			util.Er(err)
+			prt.BatchAdd(tbls[0], tbls[1], cnt)
+		} else {
+			db.AddPartition(tbls[0], tbls[1], args[1], args[2])
+		}
 
 		show, err := cmd.Flags().GetBool("show")
 		util.Er(err)
 
 		if show {
-			db.InformSchema(tbls[0], tbls[1])
+			prt.PartitionsInfo(tbls[0], tbls[1])
 		}
 	},
 }
@@ -64,7 +86,7 @@ var prtStatus = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
-		db.InformSchema(tbls[0], tbls[1])
+		prt.PartitionsInfo(tbls[0], tbls[1])
 	},
 }
 
@@ -82,7 +104,7 @@ var prtDrop = &cobra.Command{
 				return errors.New("invalid property, should be schema+table name")
 			}
 			if !db.CheckTablePresent(tbls[0], tbls[1]) {
-				return errors.New("Table " + args[0] + " does not exist")
+				return errors.New("table " + args[0] + " does not exist")
 			}
 			return errors.New("partition name is missing")
 		default:
@@ -97,7 +119,7 @@ var prtDrop = &cobra.Command{
 		util.Er(err)
 
 		if show {
-			db.InformSchema(tbls[0], tbls[1])
+			prt.PartitionsInfo(tbls[0], tbls[1])
 		}
 	},
 }
