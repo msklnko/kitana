@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/msklnko/kitana/cmt"
 	"github.com/msklnko/kitana/util"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -180,7 +181,7 @@ func AddPartitions(sh, tb string, partitions map[string]int64) {
 	// Build sql for each partition
 	var ps []string
 	for n, l := range partitions {
-		ps = append(ps, " partition "+n+" values less than ("+string(l)+") ")
+		ps = append(ps, " partition "+n+" values less than ("+strconv.FormatInt(l, 10)+") ")
 	}
 
 	// Alter

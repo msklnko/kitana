@@ -7,6 +7,7 @@ import (
 	"github.com/msklnko/kitana/db"
 	"github.com/msklnko/kitana/util"
 	"sort"
+	"strconv"
 	"text/tabwriter"
 	"time"
 )
@@ -27,7 +28,7 @@ func BatchAdd(sh, tb string, count int) {
 
 	if !cmt.CommentPattern.MatchString(comment) {
 		util.Er(errors.New("in order to partition the table " + sh + "." + tb + " need to add a comment, " +
-			"use `kitana cmt add [GM:C:T:R:Rc]`"))
+			"use `kitana cmt add `db.table_name` [GM:C:T:R:Rc]`"))
 		return
 	}
 
@@ -39,16 +40,35 @@ func BatchAdd(sh, tb string, count int) {
 	// Last partition, identifier to start
 	lastPartition := partitions[len(partitions)-1]
 	lastDateLimitter := time.Unix(lastPartition.Desc, 0)
-	lastName := lastPartition.Name
+	_ = lastPartition.Name
 
 	// Candidates
 	candidates := make(map[string]int64)
 
 	// Comment
 	def, _ := cmt.Def(comment)
-	rp = def.Rp
-	if(rp.)
+	var month int = 0
+	var days int = 0
+	//TODO ask! if const
+	if def.PartitionType == cmt.ToType("ml") {
+		month = 1
+	} else if def.PartitionType == cmt.ToType("dl") {
+		days = 1
+	}
 
+	for i := 0; i < count; i++ {
+		//TODO day
+		year, m, _ := lastDateLimitter.Date()
+		lastDateLimitter = lastDateLimitter.AddDate(0, month, days)
+
+		// Need to search function
+		mnth := strconv.Itoa(int(m))
+		if len(mnth) != 2 {
+			mnth = "0" + mnth
+		}
+
+		candidates["part"+strconv.Itoa(year)+mnth] = lastDateLimitter.Unix()
+	}
 
 	db.AddPartitions(sh, tb, candidates)
 

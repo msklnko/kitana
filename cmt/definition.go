@@ -35,7 +35,7 @@ func Def(cmt string) (*Definition, string) {
 	util.Er(err)
 	definition = Definition{
 		Column:        parts[1],
-		PartitionType: toType(parts[2]),
+		PartitionType: ToType(parts[2]),
 		Rp:            toRP(parts[3]),
 		Count:         cnt,
 	}

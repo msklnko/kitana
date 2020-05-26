@@ -17,7 +17,7 @@ func (t Type) toString() string {
 	return string(t)
 }
 
-func toType(tp string) Type {
+func ToType(tp string) Type {
 	switch tp {
 	case "ml":
 		return ml

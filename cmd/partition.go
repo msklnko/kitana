@@ -55,6 +55,7 @@ var prtAdd = &cobra.Command{
 
 		if len(args) == 2 {
 			cnt, err := strconv.Atoi(args[1][1:len(args[1])])
+			//TODO just +
 			util.Er(err)
 			prt.BatchAdd(tbls[0], tbls[1], cnt)
 		} else {
