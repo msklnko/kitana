@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/msklnko/kitana/cmt"
 	"github.com/msklnko/kitana/util"
 	"text/tabwriter"
 	"time"
@@ -76,10 +77,14 @@ func ShowTables(sh string, comment, part, def bool) {
 
 	// Print
 	if len(parsed) > 0 {
-		util.Print(util.Ternar(def, "Name\tComment\t", ""),
+		util.Print(util.Ternar(def, "Name\tComment\tDefinition\t", "Name\tComment\t"),
 			func(w *tabwriter.Writer) {
 				for _, s := range parsed {
-					_, _ = fmt.Fprintf(w, "%s\t%s\n", s.name, s.comment.String)
+					if def {
+						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", s.name, s.comment.String, cmt.Def(s.comment.String))
+					} else {
+						_, _ = fmt.Fprintf(w, "%s\t%s\n", s.name, s.comment.String)
+					}
 				}
 			})
 		fmt.Println("[", sh, "] Count :", count)
