@@ -49,13 +49,14 @@ func BatchAdd(sh, tb string, count int) {
 	def, _ := cmt.Def(comment)
 	var month int = 0
 	var days int = 0
-	//TODO ask! if const
+	//TODO ask
 	if def.PartitionType == cmt.ToType("ml") {
 		month = 1
 	} else if def.PartitionType == cmt.ToType("dl") {
 		days = 1
 	}
 
+	//TODO ask if date
 	for i := 0; i < count; i++ {
 		//TODO day
 		year, m, _ := lastDateLimitter.Date()

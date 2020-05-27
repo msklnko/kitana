@@ -8,13 +8,8 @@ import (
 )
 
 // CmtPattern Partitioned comment pattern
-var CommentPattern *regexp.Regexp
+var CommentPattern *regexp.Regexp = regexp.MustCompile(`(?m)^\[GM:\w+:(ml|dl):(d|n|b):\d\]$`)
 var PartIdentification string = "GM"
-
-func init() {
-	// Regexp for comment
-	CommentPattern = regexp.MustCompile(`(?m)^\[GM:\w+:(ml|dl):(d|n|b):\d\]$`)
-}
 
 func Def(cmt string) (*Definition, string) {
 	definition := Definition{}
@@ -48,7 +43,7 @@ func Def(cmt string) (*Definition, string) {
 
 // Comment structure
 type Definition struct {
-	Column        string          //column name for partitioning
+	Column        string          // column name for partitioning
 	PartitionType Type            // partitioning type
 	Rp            RetentionPolicy // retention policy
 	Count         int             // retention policy old partitions count
