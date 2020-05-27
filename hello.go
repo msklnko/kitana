@@ -1,17 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"github.com/mono83/xray/std/xcobra"
 	"github.com/msklnko/kitana/cmd"
-	"os"
 )
 
-func init() {
-}
-
 func main() {
-	if err := cmd.KitanaCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
+	// Attaching XRay logging and starting command
+	xcobra.Start(cmd.KitanaCmd)
 }

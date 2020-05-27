@@ -3,34 +3,56 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/msklnko/kitana/cmt"
-	"github.com/msklnko/kitana/util"
 	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/mono83/xray"
+	"github.com/mono83/xray/args"
+	"github.com/msklnko/kitana/cmt"
+	"github.com/msklnko/kitana/config"
+	"github.com/msklnko/kitana/util"
 )
 
 var db *sql.DB
 
 func init() {
-	d, err := sql.Open("mysql",
-		util.Configuration.Database.Username+":"+util.Configuration.Database.Password+
-			"@tcp("+util.Configuration.Database.Host+":"+util.Configuration.Database.Port+")/")
+	db, err := connect(config.Configuration)
 	if err != nil {
-		util.Er(err)
+		panic(err)
 	}
-	db = d
 	db.SetMaxOpenConns(5)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(2 * time.Minute)
 }
 
+func connect(c config.Config) (*sql.DB, error) {
+	db, err := sql.Open("mysql", c.MySQL().FormatDSN())
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
 // AlterComment Execute `ALTER COMMENT schema.table`
-func AlterComment(sh, tb, cmt string) {
-	_, err := db.Query("alter table " + sh + "." + tb + " comment = '" + cmt + "'")
-	util.Er(err)
+func AlterComment(database, table, comment string) error {
+	_, err := db.Exec(fmt.Sprintf(
+		`ALTER TABLE %s.%s COMMENT='%s'`,
+		database, table, comment,
+	))
+	if err != nil {
+		xray.ROOT.Fork().Alert("Error adding comment to :name - :err", args.Name(table), args.Error{Err: err})
+		return err
+	}
+
+	return nil
 }
 
 // ShowCreateTable Execute `SHOW CREATE TABLE schema.table`
