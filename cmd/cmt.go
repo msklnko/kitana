@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/msklnko/kitana/cmt"
 	"github.com/msklnko/kitana/db"
+	"github.com/msklnko/kitana/definition"
 	"github.com/msklnko/kitana/util"
 	"github.com/spf13/cobra"
 	"os"
@@ -22,7 +22,7 @@ var alterCmtCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
 	PreRun: func(cmd *cobra.Command, args []string) {
 		comment := args[1]
-		matchString := cmt.CommentPattern.MatchString(comment)
+		matchString := definition.CommentPattern.MatchString(comment)
 		if !matchString {
 			fmt.Println("invalid comment format, should be [GM:C:T:R:Rc]")
 			os.Exit(1)

@@ -11,21 +11,22 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
-	"github.com/msklnko/kitana/cmt"
 	"github.com/msklnko/kitana/config"
+	"github.com/msklnko/kitana/definition"
 	"github.com/msklnko/kitana/util"
 )
 
 var db *sql.DB
 
 func init() {
-	db, err := connect(config.Configuration)
+	d, err := connect(config.Configuration)
 	if err != nil {
 		panic(err)
 	}
-	db.SetMaxOpenConns(5)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(2 * time.Minute)
+	d.SetMaxOpenConns(5)
+	d.SetMaxIdleConns(5)
+	d.SetConnMaxLifetime(2 * time.Minute)
+	db = d
 }
 
 func connect(c config.Config) (*sql.DB, error) {
@@ -78,7 +79,7 @@ func ShowTables(sh string, comment, part, def bool) {
 	if comment {
 		query = query + " and table_comment !=''"
 	} else if part {
-		query = query + " and table_comment like '%" + cmt.PartIdentification + "%'"
+		query = query + " and table_comment like '%" + definition.PartIdentification + "%'"
 	}
 
 	tbls, err := db.Query(query)
@@ -105,7 +106,7 @@ func ShowTables(sh string, comment, part, def bool) {
 			func(w *tabwriter.Writer) {
 				for _, s := range parsed {
 					if def {
-						_, def := cmt.Def(s.comment.String)
+						_, def := definition.Parse(s.comment.String)
 						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", s.name, s.comment.String, def)
 					} else {
 						_, _ = fmt.Fprintf(w, "%s\t%s\n", s.name, s.comment.String)
@@ -187,10 +188,11 @@ func InformSchema(sh, tb string) ([]Partition, bool, string) {
 }
 
 // AddPartition Add partition
-func AddPartition(sh, tb, name, limiter string) {
-	_, err := db.Query("alter table " + sh + "." + tb +
-		" add partition (partition " + name + " values less than (" + limiter + "))")
-	util.Er(err)
+func AddPartition(sh, tb, name string, limiter int64) error {
+	_, err := db.Exec("alter table " + sh + "." + tb +
+		" add partition (partition " + name + " values less than (" + strconv.FormatInt(limiter, 10) + "))")
+
+	return err
 }
 
 // AddPartitions Add partitions to existing partitioned table
@@ -207,7 +209,7 @@ func AddPartitions(sh, tb string, partitions map[string]int64) {
 	}
 
 	// Alter
-	_, err := db.Query("alter table " + sh + "." + tb + " add partition (" + strings.Join(ps[:], ",") + ")")
+	_, err := db.Exec("alter table " + sh + "." + tb + " add partition (" + strings.Join(ps[:], ",") + ")")
 	util.Er(err)
 }
 

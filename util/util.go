@@ -26,10 +26,21 @@ func Print(headers string, fn Iterate) {
 
 type Iterate func(*tabwriter.Writer)
 
+// Ternary Ternary operator, instead of if else
 func Ternary(condition bool, case1, case2 string) string {
 	if condition {
 		return case1
 	} else {
 		return case2
 	}
+}
+
+// Contains Searches string in slice
+func Contains(data []string, requested string) bool {
+	for _, record := range data {
+		if record == requested {
+			return true
+		}
+	}
+	return false
 }

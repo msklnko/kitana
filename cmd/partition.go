@@ -2,13 +2,16 @@ package cmd
 
 import (
 	"errors"
-	"github.com/msklnko/kitana/db"
-	"github.com/msklnko/kitana/prt"
-	"github.com/msklnko/kitana/util"
-	"github.com/spf13/cobra"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/mono83/xray"
+	"github.com/msklnko/kitana/db"
+	"github.com/msklnko/kitana/partition"
+	"github.com/msklnko/kitana/util"
+	"github.com/spf13/cobra"
 )
 
 var prtCount *regexp.Regexp
@@ -44,6 +47,8 @@ var prtAdd = &cobra.Command{
 			if prtCount.MatchString(args[1]) {
 				// Means that `alias` was used to add partitions //TODO
 				return nil
+			} else if args[1] == "next" {
+				return nil
 			}
 			return errors.New("limiter is missing")
 		default:
@@ -52,21 +57,26 @@ var prtAdd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
+		logger := xray.ROOT.Fork()
 
-		if len(args) == 2 {
+		if len(args) == 2 && args[1] != "next" {
 			cnt, err := strconv.Atoi(args[1][1:len(args[1])])
 			//TODO just +
 			util.Er(err)
-			prt.BatchAdd(tbls[0], tbls[1], cnt)
+			_ = partition.BatchAdd(tbls[0], tbls[1], cnt)
 		} else {
-			db.AddPartition(tbls[0], tbls[1], args[1], args[2])
+			err := partition.AddNextPartition(tbls[0], tbls[1], logger)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			//db.AddPartition(tbls[0], tbls[1], args[1], args[2])
 		}
 
 		show, err := cmd.Flags().GetBool("show")
 		util.Er(err)
 
 		if show {
-			prt.PartitionsInfo(tbls[0], tbls[1])
+			_ = partition.PartitionsInfo(tbls[0], tbls[1])
 		}
 	},
 }
@@ -87,7 +97,7 @@ var prtStatus = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
-		prt.PartitionsInfo(tbls[0], tbls[1])
+		partition.PartitionsInfo(tbls[0], tbls[1])
 	},
 }
 
@@ -120,7 +130,7 @@ var prtDrop = &cobra.Command{
 		util.Er(err)
 
 		if show {
-			prt.PartitionsInfo(tbls[0], tbls[1])
+			partition.PartitionsInfo(tbls[0], tbls[1])
 		}
 	},
 }
