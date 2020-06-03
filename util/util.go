@@ -6,14 +6,6 @@ import (
 	"text/tabwriter"
 )
 
-// Er Print error and stop application
-func Er(err error) {
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
 func Print(headers string, fn Iterate) {
 	w := new(tabwriter.Writer)
 	// Format in tab-separated columns with a tab stop of 8.
@@ -43,4 +35,8 @@ func Contains(data []string, requested string) bool {
 		}
 	}
 	return false
+}
+
+type Operations interface {
+	Map() []string
 }

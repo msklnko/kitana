@@ -4,8 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
-	"strings"
+	s "strings"
 
 	"github.com/mono83/xray"
 	"github.com/msklnko/kitana/db"
@@ -34,11 +33,11 @@ var prtAdd = &cobra.Command{
 			return errors.New("missing arguments (table, name, limiter)." +
 				" Also (+) with count of partitions could be used")
 		case 1:
-			var tbls = strings.Split(args[0], ".")
-			if len(tbls) != 2 {
+			var tables = s.Split(args[0], ".")
+			if len(tables) != 2 {
 				return errors.New("invalid property, should be schema+table name")
 			}
-			if !db.CheckTablePresent(tbls[0], tbls[1]) {
+			if !db.CheckTablePresent(tables[0], tables[1]) {
 				return errors.New("table " + args[0] + " does not exist")
 			}
 			return errors.New("partition name and limiter are missing" +
@@ -56,27 +55,27 @@ var prtAdd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var tbls = strings.Split(args[0], ".")
+		var tables = s.Split(args[0], ".")
 		logger := xray.ROOT.Fork()
 
 		if len(args) == 2 && args[1] != "next" {
-			cnt, err := strconv.Atoi(args[1][1:len(args[1])])
+			//cnt, err := strconv.Atoi(args[1][1:len(args[1])])
 			//TODO just +
-			util.Er(err)
-			_ = partition.BatchAdd(tbls[0], tbls[1], cnt)
+			//util.Er(err)
+			//_ = partition.BatchAdd(tables[0], tables[1], cnt)
 		} else {
-			err := partition.AddNextPartition(tbls[0], tbls[1], logger)
+			err := partition.ManagePartitions(tables[0], tables[1], logger)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
-			//db.AddPartition(tbls[0], tbls[1], args[1], args[2])
+			//db.AddPartition(tables[0], tables[1], args[1], args[2])
 		}
 
 		show, err := cmd.Flags().GetBool("show")
 		util.Er(err)
 
 		if show {
-			_ = partition.PartitionsInfo(tbls[0], tbls[1])
+			_ = partition.PartitionsInfo(tables[0], tables[1])
 		}
 	},
 }
@@ -89,15 +88,15 @@ var prtStatus = &cobra.Command{
 		if len(args) != 1 {
 			return errors.New("table name is missing")
 		}
-		var tbls = strings.Split(args[0], ".")
-		if len(tbls) != 2 {
+		var tables = s.Split(args[0], ".")
+		if len(tables) != 2 {
 			return errors.New("invalid property, should be schema+table name")
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var tbls = strings.Split(args[0], ".")
-		partition.PartitionsInfo(tbls[0], tbls[1])
+		var tables = s.Split(args[0], ".")
+		partition.PartitionsInfo(tables[0], tables[1])
 	},
 }
 
@@ -110,11 +109,11 @@ var prtDrop = &cobra.Command{
 		case 0:
 			return errors.New("missing arguments (table, partition name)")
 		case 1:
-			var tbls = strings.Split(args[0], ".")
-			if len(tbls) != 2 {
+			var tables = s.Split(args[0], ".")
+			if len(tables) != 2 {
 				return errors.New("invalid property, should be schema+table name")
 			}
-			if !db.CheckTablePresent(tbls[0], tbls[1]) {
+			if !db.CheckTablePresent(tables[0], tables[1]) {
 				return errors.New("table " + args[0] + " does not exist")
 			}
 			return errors.New("partition name is missing")
@@ -123,14 +122,14 @@ var prtDrop = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var tbls = strings.Split(args[0], ".")
-		db.DropPartition(tbls[0], tbls[1], args[1])
+		var tables = s.Split(args[0], ".")
+		db.DropPartition(tables[0], tables[1], []string{args[1]})
 
 		show, err := cmd.Flags().GetBool("show")
 		util.Er(err)
 
 		if show {
-			partition.PartitionsInfo(tbls[0], tbls[1])
+			partition.PartitionsInfo(tables[0], tables[1])
 		}
 	},
 }

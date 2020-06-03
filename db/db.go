@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/mono83/xray"
@@ -16,21 +15,9 @@ import (
 	"github.com/msklnko/kitana/util"
 )
 
-var db *sql.DB
-
-func init() {
-	d, err := connect(config.Configuration)
-	if err != nil {
-		panic(err)
-	}
-	d.SetMaxOpenConns(5)
-	d.SetMaxIdleConns(5)
-	d.SetConnMaxLifetime(2 * time.Minute)
-	db = d
-}
-
-func connect(c config.Config) (*sql.DB, error) {
-	db, err := sql.Open("mysql", c.MySQL().FormatDSN())
+func connect() (*sql.DB, error) {
+	db, err := sql.Open("mysql", config.Configuration.MySQL().FormatDSN())
+	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +31,11 @@ func connect(c config.Config) (*sql.DB, error) {
 
 // AlterComment Execute `ALTER COMMENT schema.table`
 func AlterComment(database, table, comment string) error {
+	db, er := connect()
+	if er != nil {
+		panic(er)
+	}
+
 	_, err := db.Exec(fmt.Sprintf(
 		`ALTER TABLE %s.%s COMMENT='%s'`,
 		database, table, comment,
@@ -56,9 +48,14 @@ func AlterComment(database, table, comment string) error {
 	return nil
 }
 
-// ShowCreateTable Execute `SHOW CREATE TABLE schema.table`
-func ShowCreateTable(sh, tb string) {
-	desc, err := db.Query("show create table " + sh + "." + tb)
+// ShowCreateTable Execute `databaseOW CREATE TABLE schema.table`
+func ShowCreateTable(database, table string) {
+	db, er := connect()
+	if er != nil {
+		panic(er)
+	}
+
+	desc, err := db.Query("database show create table " + database + "." + table)
 	util.Er(err)
 
 	for desc.Next() {
@@ -74,7 +71,7 @@ func ShowCreateTable(sh, tb string) {
 }
 
 // ShowTables Show tables for db schema
-func ShowTables(sh string, comment, part, def bool) {
+func ShowTables(database string, comment, part, def bool) {
 	var query = "select table_name, table_comment from information_schema.tables where table_schema=\"" + sh + "\""
 	if comment {
 		query = query + " and table_comment !=''"
@@ -82,7 +79,12 @@ func ShowTables(sh string, comment, part, def bool) {
 		query = query + " and table_comment like '%" + definition.PartIdentification + "%'"
 	}
 
-	tbls, err := db.Query(query)
+	db, er := connect()
+	if er != nil {
+		panic(er)
+	}
+
+	tablels, err := db.Query(query)
 	util.Er(err)
 
 	//var desc Table
@@ -92,9 +94,9 @@ func ShowTables(sh string, comment, part, def bool) {
 		comment sql.NullString
 	}
 	var parsed []row
-	for tbls.Next() {
+	for tablels.Next() {
 		var r row
-		err := tbls.Scan(&r.name, &r.comment)
+		err := tablels.Scan(&r.name, &r.comment)
 		util.Er(err)
 		parsed = append(parsed, r)
 		count++
@@ -113,31 +115,40 @@ func ShowTables(sh string, comment, part, def bool) {
 					}
 				}
 			})
-		fmt.Println("[", sh, "] Count :", count)
+		fmt.Println("[", database, "] Count :", count)
 	}
 }
 
 // CheckTablePresent Check provided table is present
-func CheckTablePresent(sh, tb string) bool {
+func CheckTablePresent(database, table string) bool {
+	db, er := connect()
+	if er != nil {
+		panic(er)
+	}
+
 	var res sql.NullInt32
 	err := db.QueryRow("select 1 from information_schema.tables " +
-		"where table_schema = '" + sh + "' and table_name = '" + tb + "'").Scan(&res)
+		"where table_schema = '" + database + "' and table_name = '" + table + "'").Scan(&res)
 	util.Er(err)
 
 	return res.Valid
 }
 
-// TODO ask
 type Partition struct {
-	Name  string
-	Expr  string
-	Count int64
-	Cr    string
-	Desc  int64
+	Name       string
+	Expression string
+	Count      int64
+	CreatedAt  string
+	Limiter    int64
 }
 
-// InformSchema Shows info about partitions, bool flag identifies table doesn't partitioned or does not exist at all
-func InformSchema(sh, tb string) ([]Partition, bool, string) {
+// InformSchema database rows info about partitions, bool flag identifies table doesn't partitioned or does not exist at all
+func InformSchema(database, table string) ([]Partition, bool, string, error) {
+	db, er := connect()
+	if er != nil {
+		panic(er)
+	}
+
 	rows, err := db.Query("select " +
 		"create_options, " +
 		"table_comment, " +
@@ -147,8 +158,10 @@ func InformSchema(sh, tb string) ([]Partition, bool, string) {
 		"p.create_time, " +
 		"p.partition_description " +
 		"from information_schema.tables t join information_schema.partitions p on p.table_name = t.table_name " +
-		"where t.table_name='" + tb + "' and t.table_schema= '" + sh + "'")
-	util.Er(err)
+		"where t.table_name='" + table + "' and t.table_schema= '" + database + "'")
+	if err != nil {
+		return nil, false, "", err
+	}
 
 	// Parse
 	type row struct {
@@ -164,42 +177,36 @@ func InformSchema(sh, tb string) ([]Partition, bool, string) {
 	for rows.Next() {
 		var r row
 		err := rows.Scan(&r.status, &r.comment, &r.name, &r.expr, &r.count, &r.cr, &r.desc)
-		util.Er(err)
+		if err != nil {
+			return nil, false, "", err
+		}
 		parsed = append(parsed, r)
 	}
 
 	// Table does not exist
 	if len(parsed) == 0 {
-		return []Partition{}, false, ""
+		return []Partition{}, false, "", nil
 	}
 
 	// Table exist but not partitioned
 	if len(parsed) == 1 && parsed[0].status.String != "partitioned" {
-		return []Partition{}, true, parsed[0].comment.String
+		return []Partition{}, true, parsed[0].comment.String, nil
 	}
 
 	s := make([]Partition, len(parsed))
 	for i := 0; i < len(parsed); i++ {
 		r := parsed[i]
-		s[i] = Partition{Name: r.name.String, Expr: r.expr.String, Count: r.count.Int64,
-			Cr: r.cr.String, Desc: r.desc.Int64}
+		s[i] = Partition{Name: r.name.String, Expression: r.expr.String, Count: r.count.Int64,
+			CreatedAt: r.cr.String, Limiter: r.desc.Int64}
 	}
-	return s, true, parsed[0].comment.String
-}
-
-// AddPartition Add partition
-func AddPartition(sh, tb, name string, limiter int64) error {
-	_, err := db.Exec("alter table " + sh + "." + tb +
-		" add partition (partition " + name + " values less than (" + strconv.FormatInt(limiter, 10) + "))")
-
-	return err
+	return s, true, parsed[0].comment.String, nil
 }
 
 // AddPartitions Add partitions to existing partitioned table
-func AddPartitions(sh, tb string, partitions map[string]int64) {
+func AddPartitions(database, table string, partitions map[string]int64) error {
 	if len(partitions) == 0 {
 		//Nothing to alter
-		return
+		return nil
 	}
 
 	// Build sql for each partition
@@ -208,13 +215,72 @@ func AddPartitions(sh, tb string, partitions map[string]int64) {
 		ps = append(ps, " partition "+n+" values less than ("+strconv.FormatInt(l, 10)+") ")
 	}
 
+	db, er := connect()
+	if er != nil {
+		panic(er)
+	}
+
 	// Alter
-	_, err := db.Exec("alter table " + sh + "." + tb + " add partition (" + strings.Join(ps[:], ",") + ")")
-	util.Er(err)
+	_, err := db.Query(fmt.Sprintf(
+		`alter table %s.%s  add partition ( %s )`,
+		database, table, strings.Join(ps[:], ","),
+	))
+
+	return err
 }
 
 // DropPartition Drop partition(s) by name
-func DropPartition(sh, tb, partition string) {
-	_, err := db.Query("alter table " + sh + "." + tb + " drop partition " + partition)
-	util.Er(err)
+func DropPartition(database, table string, partitions []string) error {
+	db, er := connect()
+	if er != nil {
+		panic(er)
+	}
+
+	_, err := db.Query(fmt.Sprintf(
+		`alter table %s.%s  drop partition %s`,
+		database, table, strings.Join(partitions, ","),
+	))
+
+	return err
+}
+
+// CreateTableDuplicate Create duplicate from table without partitions
+func CreateTableDuplicate(database, table, duplicateTable string) error {
+	db, err := connect()
+	if err != nil {
+		panic(err)
+	}
+
+	// Create duplicate table
+	_, err = db.Exec(fmt.Sprintf(
+		`create table %s.%s LIKE %s.%s`,
+		database, duplicateTable, database, table,
+	))
+	if err != nil {
+		return err
+	}
+
+	// Remove partitions
+	_, err = db.Exec(fmt.Sprintf(
+		`alter table %s.%s remove partitioning`,
+		database, duplicateTable,
+	))
+
+	return err
+}
+
+// ExchangePartition Copy partition data to another table
+func ExchangePartition(database, table, duplicateTable, name string) error {
+	db, err := connect()
+	if err != nil {
+		panic(err)
+	}
+
+	// Copy partition
+	_, err = db.Exec(fmt.Sprintf(
+		`alter table %s.%s exchange partition '%s' with table %s.%s`,
+		database, table, name, database, duplicateTable,
+	))
+
+	return err
 }
