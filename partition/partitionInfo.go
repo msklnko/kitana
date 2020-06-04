@@ -11,6 +11,10 @@ import (
 	"github.com/msklnko/kitana/util"
 )
 
+// ShowTables Show tables
+// comment - show only commented table
+// part - show only partitioned tables
+// def - print comment definition
 func ShowTables(database string, comment, part, def bool, logger xray.Ray) error {
 	tables, err := db.ShowTables(database, comment, part)
 

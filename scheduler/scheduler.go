@@ -6,13 +6,16 @@ import (
 	"time"
 )
 
+// Task Type that can be scheduled
 type Task func(ctx context.Context)
 
+// Scheduler Manager of all scheduled tasks
 type Scheduler struct {
 	waitGroup     *sync.WaitGroup
 	cancellations []context.CancelFunc // cancel functions
 }
 
+// NewScheduler Init new scheduler
 func NewScheduler() *Scheduler {
 	return &Scheduler{
 		waitGroup:     new(sync.WaitGroup),
