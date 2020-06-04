@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
 	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/definition"
-	"github.com/msklnko/kitana/util"
 )
 
 func connect() (*sql.DB, error) {
@@ -74,15 +72,23 @@ func ShowCreateTable(database, table string) error {
 	return nil
 }
 
+// Table Description
+type Table struct {
+	Name    string
+	Comment string
+}
+
 // ShowTables Show tables for db schema
-func ShowTables(database string, comment, part, def bool) error {
+func ShowTables(database string, comment, part bool) ([]Table, error) {
+	//TODO schema optional
 	var query = "select table_name, table_comment from information_schema.tables where table_schema=\"" +
 		database +
 		"\""
-	if comment {
-		query = query + " and table_comment !=''"
-	} else if part {
+
+	if part {
 		query = query + " and table_comment like '%" + definition.PartitionIdentifier + "%'"
+	} else if comment {
+		query = query + " and table_comment !=''"
 	}
 
 	db, er := connect()
@@ -92,7 +98,7 @@ func ShowTables(database string, comment, part, def bool) error {
 
 	tables, err := db.Query(query)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	//var desc Table
@@ -106,29 +112,20 @@ func ShowTables(database string, comment, part, def bool) error {
 		var r row
 		err := tables.Scan(&r.name, &r.comment)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		parsed = append(parsed, r)
 		count++
 	}
-
-	// Print
-	if len(parsed) > 0 {
-		util.Print(util.Ternary(def, "Name\tComment\tDefinition\t", "Name\tComment\t"),
-			func(w *tabwriter.Writer) {
-				for _, s := range parsed {
-					if def {
-						_, def := definition.Parse(s.comment.String)
-						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", s.name, s.comment.String, def)
-					} else {
-						_, _ = fmt.Fprintf(w, "%s\t%s\n", s.name, s.comment.String)
-					}
-				}
-			})
-		fmt.Println("[", database, "] Count :", count)
+	s := make([]Table, len(parsed))
+	for i := 0; i < len(parsed); i++ {
+		r := parsed[i]
+		s[i] = Table{
+			Name:    r.name,
+			Comment: r.comment.String,
+		}
 	}
-
-	return nil
+	return s, nil
 }
 
 // CheckTablePresent Check provided table is present
@@ -211,8 +208,13 @@ func InformSchema(database, table string) ([]Partition, bool, string, error) {
 	s := make([]Partition, len(parsed))
 	for i := 0; i < len(parsed); i++ {
 		r := parsed[i]
-		s[i] = Partition{Name: r.name.String, Expression: r.expr.String, Count: r.count.Int64,
-			CreatedAt: r.cr.String, Limiter: r.desc.Int64}
+		s[i] = Partition{
+			Name:       r.name.String,
+			Expression: r.expr.String,
+			Count:      r.count.Int64,
+			CreatedAt:  r.cr.String,
+			Limiter:    r.desc.Int64,
+		}
 	}
 	return s, true, parsed[0].comment.String, nil
 }

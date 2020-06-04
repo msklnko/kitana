@@ -21,4 +21,6 @@ func init() {
 
 	KitanaCmd.AddCommand(alterCmtCmd)
 	alterCmtCmd.Flags().BoolP("show", "s", false, "Show create table")
+
+	KitanaCmd.AddCommand(demon)
 }

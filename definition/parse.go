@@ -2,6 +2,7 @@ package definition
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -10,16 +11,16 @@ import (
 func Parse(cmt string) (*Definition, error) {
 	definition := Definition{}
 	if cmt == "" {
-		return &definition, errors.New("")
+		return &definition, errors.New("comment is empty")
 	}
 
 	if !CommentPattern.MatchString(cmt) {
-		return &definition, errors.New("comment " + cmt + " did not match with partitioning rules")
+		return &definition, errors.New(fmt.Sprintf("comment %s did not match with partitioning rules", cmt))
 	}
 
 	parts := strings.Split(cmt[1:len(cmt)-1], ":")
 	if len(parts) != 5 {
-		return nil, errors.New("comment " + cmt + " did not match with partitioning rules")
+		return nil, errors.New(fmt.Sprintf("comment %s did not match with partitioning rules", cmt))
 	}
 
 	cnt, err := strconv.Atoi(parts[4])
@@ -29,12 +30,12 @@ func Parse(cmt string) (*Definition, error) {
 
 	rp, err := ToRP(parts[3])
 	if err != nil {
-		return nil, errors.New("comment " + cmt + " has invalid retention policy")
+		return nil, errors.New(fmt.Sprintf("comment %s has invalid retention policy", cmt))
 	}
 
 	tp, err := ToType(parts[2])
 	if err != nil {
-		return nil, errors.New("comment " + cmt + " has invalid partitioned type")
+		return nil, errors.New(fmt.Sprintf("comment %s has invalid partitioned type", cmt))
 	}
 
 	definition = Definition{

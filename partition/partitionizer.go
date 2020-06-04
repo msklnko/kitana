@@ -119,8 +119,10 @@ func ManagePartitions(database, table string, logger xray.Ray) error {
 	return nil
 }
 
-func ensureNextPartition(database, table string, rule *definition.Definition,
-	partitions []db.Partition, logger xray.Ray) error {
+func ensureNextPartition(database, table string,
+	rule *definition.Definition,
+	partitions []db.Partition,
+	logger xray.Ray) error {
 	// Sort partitions (just in case)
 	sort.SliceStable(partitions, func(i, j int) bool {
 		return partitions[i].Limiter < partitions[j].Limiter

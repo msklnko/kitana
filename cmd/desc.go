@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/msklnko/kitana/db"
+	"github.com/mono83/xray"
+	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +29,12 @@ var showCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		db.ShowTables(args[0], comment, partitioned, def)
+		logger := xray.ROOT.Fork()
+		logger.Info("Incoming request `show tables`")
+		err = partition.ShowTables(args[0], comment, partitioned, def, logger)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 	},
 }
