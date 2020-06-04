@@ -42,7 +42,7 @@ func nextDaily() (*string, *time.Time) {
 	return &name, &limiter
 }
 
-// Keep Calculate partition names to stay
+// KeepAlive Calculate partition names to stay
 func KeepAlive(tp definition.Type, count int, logger xray.Ray) ([]string, error) {
 	logger.Debug("calculating partition names to keep alive (should stay :count last partitions, rp :name)",
 		args.Name(tp), args.Count(count))

@@ -5,11 +5,13 @@ import (
 	"strconv"
 )
 
-// CmtPattern Partitioned comment pattern
+// CommentPattern Partitioned comment pattern
 var CommentPattern = regexp.MustCompile(`(?m)^\[GM:\w+:(ml|dl):([dnb]):\d]$`)
-var PartIdentification = "GM"
 
-// Comment structure
+// PartitionIdentifier Partition rule should be started with GM
+var PartitionIdentifier = "GM"
+
+// Definition Comment structure
 type Definition struct {
 	Column        string          // column name for partitioning
 	PartitionType Type            // partitioning type

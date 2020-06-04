@@ -7,7 +7,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
 	"github.com/msklnko/kitana/config"
@@ -83,7 +82,7 @@ func ShowTables(database string, comment, part, def bool) error {
 	if comment {
 		query = query + " and table_comment !=''"
 	} else if part {
-		query = query + " and table_comment like '%" + definition.PartIdentification + "%'"
+		query = query + " and table_comment like '%" + definition.PartitionIdentifier + "%'"
 	}
 
 	db, er := connect()
@@ -149,6 +148,7 @@ func CheckTablePresent(database, table string) (bool, error) {
 	return res.Valid, nil
 }
 
+// Partition Structure to represent partition
 type Partition struct {
 	Name       string
 	Expression string

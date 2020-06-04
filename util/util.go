@@ -6,6 +6,7 @@ import (
 	"text/tabwriter"
 )
 
+// Print Represents data as table
 func Print(headers string, fn Iterate) {
 	w := new(tabwriter.Writer)
 	// Format in tab-separated columns with a tab stop of 8.
@@ -16,15 +17,15 @@ func Print(headers string, fn Iterate) {
 	_ = w.Flush()
 }
 
+// Iterate Function should be implemented to describe how to print values from Print
 type Iterate func(*tabwriter.Writer)
 
 // Ternary Ternary operator, instead of if else
 func Ternary(condition bool, case1, case2 string) string {
 	if condition {
 		return case1
-	} else {
-		return case2
 	}
+	return case2
 }
 
 // Contains Searches string in slice
@@ -35,8 +36,4 @@ func Contains(data []string, requested string) bool {
 		}
 	}
 	return false
-}
-
-type Operations interface {
-	Map() []string
 }
