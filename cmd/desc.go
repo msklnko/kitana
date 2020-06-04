@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
+	"os"
+
 	"github.com/msklnko/kitana/db"
-	"github.com/msklnko/kitana/util"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +15,7 @@ var showCmd = &cobra.Command{
 	Short: "Show all tables",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			return errors.New("missed schema name")
+			return errors.New("missed database")
 		}
 		return nil
 	},
@@ -21,7 +23,11 @@ var showCmd = &cobra.Command{
 		partitioned, err := cmd.Flags().GetBool("partitioned")
 		comment, err := cmd.Flags().GetBool("comment")
 		def, err := cmd.Flags().GetBool("definition")
-		util.Er(err)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
 		db.ShowTables(args[0], comment, partitioned, def)
 	},
 }

@@ -188,7 +188,7 @@ func removeOldPartitions(database, table string, rule *definition.Definition, lo
 
 		if rule.Rp == definition.B {
 			for _, name := range remove {
-				duplicateTable := table + name
+				duplicateTable := table + "_" + name
 				err := db.CreateTableDuplicate(database, table, duplicateTable)
 				if err != nil {
 					logger.Error("Error occurs during backup partition process :name, :err",
@@ -233,10 +233,10 @@ func PartitionsInfo(database, table string) error {
 	util.Print(
 		"Name\tExpression\tRows\tCreatedAt\tTill\t",
 		func(w *tabwriter.Writer) {
-			for _, s := range parsed {
+			for _, partition := range parsed {
 				_, _ = fmt.Fprintf(w,
 					"%s\t%s\t%d\t%s\t%d\n",
-					s.Name, s.Expression, s.Count, s.CreatedAt, s.Limiter)
+					partition.Name, partition.Expression, partition.Count, partition.CreatedAt, partition.Limiter)
 			}
 		})
 

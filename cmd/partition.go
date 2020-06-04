@@ -3,13 +3,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 	s "strings"
 
 	"github.com/mono83/xray"
 	"github.com/msklnko/kitana/db"
 	"github.com/msklnko/kitana/partition"
-	"github.com/msklnko/kitana/util"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +37,12 @@ var prtAdd = &cobra.Command{
 			if len(tables) != 2 {
 				return errors.New("invalid property, should be schema+table name")
 			}
-			if !db.CheckTablePresent(tables[0], tables[1]) {
+
+			present, err := db.CheckTablePresent(tables[0], tables[1])
+			if err != nil {
+				return err
+			}
+			if !present {
 				return errors.New("table " + args[0] + " does not exist")
 			}
 			return errors.New("partition name and limiter are missing" +
@@ -67,12 +72,16 @@ var prtAdd = &cobra.Command{
 			err := partition.ManagePartitions(tables[0], tables[1], logger)
 			if err != nil {
 				fmt.Println(err.Error())
+				os.Exit(1)
 			}
 			//db.AddPartition(tables[0], tables[1], args[1], args[2])
 		}
 
 		show, err := cmd.Flags().GetBool("show")
-		util.Er(err)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 
 		if show {
 			_ = partition.PartitionsInfo(tables[0], tables[1])
@@ -113,7 +122,12 @@ var prtDrop = &cobra.Command{
 			if len(tables) != 2 {
 				return errors.New("invalid property, should be schema+table name")
 			}
-			if !db.CheckTablePresent(tables[0], tables[1]) {
+			present, err := db.CheckTablePresent(tables[0], tables[1])
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(1)
+			}
+			if !present {
 				return errors.New("table " + args[0] + " does not exist")
 			}
 			return errors.New("partition name is missing")
@@ -123,13 +137,24 @@ var prtDrop = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tables = s.Split(args[0], ".")
-		db.DropPartition(tables[0], tables[1], []string{args[1]})
+		err := db.DropPartition(tables[0], tables[1], []string{args[1]})
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 
 		show, err := cmd.Flags().GetBool("show")
-		util.Er(err)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 
 		if show {
-			partition.PartitionsInfo(tables[0], tables[1])
+			err := partition.PartitionsInfo(tables[0], tables[1])
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(1)
+			}
 		}
 	},
 }

@@ -17,7 +17,6 @@ import (
 
 func connect() (*sql.DB, error) {
 	db, err := sql.Open("mysql", config.Configuration.MySQL().FormatDSN())
-	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -49,14 +48,16 @@ func AlterComment(database, table, comment string) error {
 }
 
 // ShowCreateTable Execute `databaseOW CREATE TABLE schema.table`
-func ShowCreateTable(database, table string) {
+func ShowCreateTable(database, table string) error {
 	db, er := connect()
 	if er != nil {
 		panic(er)
 	}
 
-	desc, err := db.Query("database show create table " + database + "." + table)
-	util.Er(err)
+	desc, err := db.Query("show create table " + database + "." + table)
+	if err != nil {
+		return err
+	}
 
 	for desc.Next() {
 		var (
@@ -64,15 +65,21 @@ func ShowCreateTable(database, table string) {
 			dsc  string
 		)
 		err = desc.Scan(&name, &dsc)
-		util.Er(err)
+		if err != nil {
+			return err
+		}
+
 		fmt.Println("Table: " + name)
 		fmt.Println("Description: " + dsc)
 	}
+	return nil
 }
 
 // ShowTables Show tables for db schema
-func ShowTables(database string, comment, part, def bool) {
-	var query = "select table_name, table_comment from information_schema.tables where table_schema=\"" + sh + "\""
+func ShowTables(database string, comment, part, def bool) error {
+	var query = "select table_name, table_comment from information_schema.tables where table_schema=\"" +
+		database +
+		"\""
 	if comment {
 		query = query + " and table_comment !=''"
 	} else if part {
@@ -84,8 +91,10 @@ func ShowTables(database string, comment, part, def bool) {
 		panic(er)
 	}
 
-	tablels, err := db.Query(query)
-	util.Er(err)
+	tables, err := db.Query(query)
+	if err != nil {
+		return err
+	}
 
 	//var desc Table
 	var count int
@@ -94,10 +103,12 @@ func ShowTables(database string, comment, part, def bool) {
 		comment sql.NullString
 	}
 	var parsed []row
-	for tablels.Next() {
+	for tables.Next() {
 		var r row
-		err := tablels.Scan(&r.name, &r.comment)
-		util.Er(err)
+		err := tables.Scan(&r.name, &r.comment)
+		if err != nil {
+			return err
+		}
 		parsed = append(parsed, r)
 		count++
 	}
@@ -117,10 +128,12 @@ func ShowTables(database string, comment, part, def bool) {
 			})
 		fmt.Println("[", database, "] Count :", count)
 	}
+
+	return nil
 }
 
 // CheckTablePresent Check provided table is present
-func CheckTablePresent(database, table string) bool {
+func CheckTablePresent(database, table string) (bool, error) {
 	db, er := connect()
 	if er != nil {
 		panic(er)
@@ -129,9 +142,11 @@ func CheckTablePresent(database, table string) bool {
 	var res sql.NullInt32
 	err := db.QueryRow("select 1 from information_schema.tables " +
 		"where table_schema = '" + database + "' and table_name = '" + table + "'").Scan(&res)
-	util.Er(err)
+	if err != nil {
+		return false, err
+	}
 
-	return res.Valid
+	return res.Valid, nil
 }
 
 type Partition struct {
@@ -278,7 +293,7 @@ func ExchangePartition(database, table, duplicateTable, name string) error {
 
 	// Copy partition
 	_, err = db.Exec(fmt.Sprintf(
-		`alter table %s.%s exchange partition '%s' with table %s.%s`,
+		`alter table %s.%s exchange partition %s with table %s.%s`,
 		database, table, name, database, duplicateTable,
 	))
 

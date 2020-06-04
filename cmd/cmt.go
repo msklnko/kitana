@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/msklnko/kitana/db"
-	"github.com/msklnko/kitana/definition"
-	"github.com/msklnko/kitana/util"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/msklnko/kitana/db"
+	"github.com/msklnko/kitana/definition"
+	"github.com/spf13/cobra"
 )
 
 var alterCmtCmd = &cobra.Command{
@@ -30,12 +30,19 @@ var alterCmtCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tbls = strings.Split(args[0], ".")
-		db.AlterComment(tbls[0], tbls[1], args[1])
+		err := db.AlterComment(tbls[0], tbls[1], args[1])
 
 		value, err := cmd.Flags().GetBool("show")
-		util.Er(err)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 		if value {
-			db.ShowCreateTable(tbls[0], tbls[1])
+			err := db.ShowCreateTable(tbls[0], tbls[1])
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(1)
+			}
 		}
 	},
 }

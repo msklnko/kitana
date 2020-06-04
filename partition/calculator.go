@@ -62,10 +62,10 @@ func keepMonth(count int) []string {
 	keepAlive = append(keepAlive, prefix+date.Format(monthFormat))
 
 	iterates := count
-	for iterates == 0 {
+	for iterates > 0 {
 		date = date.AddDate(0, -1, 0)
 		keepAlive = append(keepAlive, prefix+date.Format(monthFormat))
-		iterates -= iterates
+		iterates--
 	}
 	return keepAlive
 }

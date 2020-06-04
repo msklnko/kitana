@@ -4,8 +4,6 @@ import (
 	"errors"
 	"strconv"
 	"strings"
-
-	"github.com/msklnko/kitana/util"
 )
 
 // Parse Parse comment from table to definition structure
@@ -25,7 +23,9 @@ func Parse(cmt string) (*Definition, error) {
 	}
 
 	cnt, err := strconv.Atoi(parts[4])
-	util.Er(err)
+	if err != nil {
+		return nil, err
+	}
 
 	rp, err := ToRP(parts[3])
 	if err != nil {
