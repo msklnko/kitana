@@ -17,10 +17,10 @@ Partition management tool
   
   
   Add comment:
-  `kitana cmt wallet_wtc.transactionStorno [GM:createdAt:ml:b:4] -s`
-  -s - show create table
+  - `kitana cmt wallet_wtc.transactionStorno [GM:createdAt:ml:b:4] -s`
+   -s - show create table
   
   Drop partition:
-  `kitana prt status wallet_wtc.transactionReferralPayout`
-  `kitana prt drop wallet_wtc.transactionReferralPayout part202006 -s`
+  - `kitana prt status wallet_wtc.transactionReferralPayout`
+  - `kitana prt drop wallet_wtc.transactionReferralPayout part202006 -s`
 
