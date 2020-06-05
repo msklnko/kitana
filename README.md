@@ -9,7 +9,7 @@ Partition management tool
 # Usage
   
   Available Commands:
-  cmt         Add comment to provided table in supported format [GM:C:T:R:Rc], 
+  cmt         Add comment to provided table in supported format [GM:C:T:R:Rc], >
   daemon      Run partitioning in daemon,
   help        Help about any command,
   prt         Used either to obtain information about information_schema.partitions,
