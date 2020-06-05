@@ -12,7 +12,7 @@ Partition management tool
    - __cmt__:         Add comment to provided table in supported format [GM:C:T:R:Rc]
    - __daemon__:      Run partitioning in daemon
    - __help__:        Help about any command
-   - __prt_:         Used either to obtain information about information_schema.partitions
+   - __prt__:         Used either to obtain information about information_schema.partitions
    - __show__:        Show all tables
   
   __Show partitions:__
