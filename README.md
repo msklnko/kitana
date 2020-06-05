@@ -32,6 +32,6 @@ Partition management tool
   __Add partition:__
   - `kitana prt add database.table part202008 1598961600 -s`
   
-  __Run in daemon:__
+  __Run in daemon:__ .
    Every 30 seconds application would check if all necessary partitions are created and old partitions processed in the specified way
   - `kitana daemon`
