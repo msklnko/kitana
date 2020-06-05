@@ -9,11 +9,11 @@ Partition management tool
 # Usage
   
   __Available Commands:__
-   - cmt:         Add comment to provided table in supported format [GM:C:T:R:Rc]
-   - daemon:      Run partitioning in daemon
-   - help:        Help about any command
-   - prt:         Used either to obtain information about information_schema.partitions
-   - show:        Show all tables
+   - __cmt__:         Add comment to provided table in supported format [GM:C:T:R:Rc]
+   - __daemon__:      Run partitioning in daemon
+   - __help__:        Help about any command
+   - __prt_:         Used either to obtain information about information_schema.partitions
+   - __show__:        Show all tables
   
   __Show partitions:__
   - `kitana show database`
