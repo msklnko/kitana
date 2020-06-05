@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	s "strings"
 
-	"github.com/mono83/xray"
 	"github.com/msklnko/kitana/db"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
@@ -61,20 +61,17 @@ var prtAdd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tables = s.Split(args[0], ".")
-		logger := xray.ROOT.Fork()
 
-		if len(args) == 2 && args[1] != "next" {
-			//cnt, err := strconv.Atoi(args[1][1:len(args[1])])
-			//TODO just +
-			//util.Er(err)
-			//_ = partition.BatchAdd(tables[0], tables[1], cnt)
-		} else {
-			err := partition.ManagePartitions(tables[0], tables[1], logger)
-			if err != nil {
-				fmt.Println(err.Error())
-				os.Exit(1)
-			}
-			//db.AddPartition(tables[0], tables[1], args[1], args[2])
+		limiter, err := strconv.ParseInt(args[2], 10, 64)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		err = db.AddPartitions(tables[0], tables[1], map[string]int64{args[1]: limiter})
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
 		}
 
 		show, err := cmd.Flags().GetBool("show")

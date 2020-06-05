@@ -282,6 +282,15 @@ func CreateTableDuplicate(database, table, duplicateTable string) error {
 		`alter table %s.%s remove partitioning`,
 		database, duplicateTable,
 	))
+	if err != nil {
+		return err
+	}
+
+	// Change comment
+	_, err = db.Exec(fmt.Sprintf(
+		`alter table %s.%s comment 'Backup for %s'`,
+		database, duplicateTable, table,
+	))
 
 	return err
 }
