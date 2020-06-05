@@ -17,13 +17,13 @@ Partition management tool
   
   __Show partitions:__
   - `kitana show database`
-    -c - only with comment
-    -p only partitionised
-    -d with comment definition
+    - -c - only with comment
+    - -p only partitionised
+    - -d with comment definition
   
   __Add comment:__
   - `kitana cmt database.table [GM:createdAt:ml:b:4] -s`
-   -s - show create table
+   - -s - show create table
   
   __Drop partition:__
   - `kitana prt status database.table`
