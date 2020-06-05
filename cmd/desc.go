@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -14,12 +13,6 @@ import (
 var showCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show all tables",
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return errors.New("missed database")
-		}
-		return nil
-	},
 	Run: func(cmd *cobra.Command, args []string) {
 		partitioned, err := cmd.Flags().GetBool("partitioned")
 		comment, err := cmd.Flags().GetBool("comment")
@@ -31,7 +24,12 @@ var showCmd = &cobra.Command{
 
 		logger := xray.ROOT.Fork()
 		logger.Info("Incoming request `show tables`")
-		err = partition.ShowTables(args[0], comment, partitioned, def, logger)
+
+		var database = ""
+		if len(args) > 0 {
+			database = args[0]
+		}
+		err = partition.ShowTables(database, comment, partitioned, def, logger)
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)

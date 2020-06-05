@@ -1,6 +1,7 @@
 package partition
 
 import (
+	"errors"
 	"fmt"
 	"text/tabwriter"
 
@@ -24,7 +25,7 @@ func ShowTables(database string, comment, part, def bool, logger xray.Ray) error
 
 	// Print
 	if len(tables) > 0 {
-		util.Print(util.Ternary(def, "Name\tComment\tDefinition\t", "Name\tComment\t"),
+		util.Print(util.Ternary(def, "Database\tName\tComment\tDefinition\t", "Database\tName\tComment\t"),
 			func(w *tabwriter.Writer) {
 				for _, s := range tables {
 					if def {
@@ -37,13 +38,49 @@ func ShowTables(database string, comment, part, def bool, logger xray.Ray) error
 								parsed = shelved.String()
 							}
 						}
-						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", s.Name, s.Comment, parsed)
+						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", s.Database, s.Name, s.Comment, parsed)
 					} else {
-						_, _ = fmt.Fprintf(w, "%s\t%s\n", s.Name, s.Comment)
+						_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", s.Database, s.Name, s.Comment)
 					}
 				}
 			})
 		fmt.Println("[", database, "] Count :", len(tables))
 	}
+	return nil
+}
+
+// PartitionsInfo Print info about partitions
+func PartitionsInfo(database, table string) error {
+	parsed, exist, _, err := db.InformSchema(database, table)
+	if err != nil {
+		return err
+	}
+
+	// Table does not exist
+	if !exist {
+		return errors.New("Table '" + database + "." + table + " doesn't exist")
+	}
+
+	// Table is not partitioned
+	if exist && len(parsed) == 0 {
+		return errors.New("Table '" + database + "." + table + " is not partitioned")
+	}
+
+	// Print
+	util.Print(
+		"Name\tExpression\tRows\tCreatedAt\tTill\t",
+		func(w *tabwriter.Writer) {
+			for _, partition := range parsed {
+				_, _ = fmt.Fprintf(w,
+					"%s\t%s\t%d\t%s\t%d\n",
+					partition.Name, partition.Expression, partition.Count, partition.CreatedAt, partition.Limiter)
+			}
+		})
+
+	return nil
+}
+
+// CheckStatus Check inconsistency (partitioned = comment)
+func CheckStatus(database string) error {
 	return nil
 }

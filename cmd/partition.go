@@ -102,7 +102,11 @@ var prtStatus = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var tables = s.Split(args[0], ".")
-		partition.PartitionsInfo(tables[0], tables[1])
+		err := partition.PartitionsInfo(tables[0], tables[1])
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 	},
 }
 

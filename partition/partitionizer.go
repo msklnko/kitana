@@ -2,10 +2,8 @@ package partition
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 	s "strings"
-	"text/tabwriter"
 
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
@@ -211,36 +209,5 @@ func removeOldPartitions(database, table string, rule *definition.Definition, lo
 			return err
 		}
 	}
-	return nil
-}
-
-// PartitionsInfo Print info about partitions
-func PartitionsInfo(database, table string) error {
-	parsed, exist, _, err := db.InformSchema(database, table)
-	if err != nil {
-		return err
-	}
-
-	// Table does not exist
-	if !exist {
-		return errors.New("Table '" + database + "." + table + " doesn't exist")
-	}
-
-	// Table is not partitioned
-	if exist && len(parsed) == 0 {
-		return errors.New("Table '" + database + "." + table + " is not partitioned")
-	}
-
-	// Print
-	util.Print(
-		"Name\tExpression\tRows\tCreatedAt\tTill\t",
-		func(w *tabwriter.Writer) {
-			for _, partition := range parsed {
-				_, _ = fmt.Fprintf(w,
-					"%s\t%s\t%d\t%s\t%d\n",
-					partition.Name, partition.Expression, partition.Count, partition.CreatedAt, partition.Limiter)
-			}
-		})
-
 	return nil
 }

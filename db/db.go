@@ -74,21 +74,34 @@ func ShowCreateTable(database, table string) error {
 
 // Table Description
 type Table struct {
-	Name    string
-	Comment string
+	Database string
+	Name     string
+	Comment  string
 }
 
 // ShowTables Show tables for db schema
 func ShowTables(database string, comment, part bool) ([]Table, error) {
-	//TODO schema optional
-	var query = "select table_name, table_comment from information_schema.tables where table_schema=\"" +
-		database +
-		"\""
+	var query = "select table_schema, table_name, table_comment from information_schema.tables"
 
+	// Collect conditions
+	var where []string
+	if len(database) > 0 {
+		where = append(where, fmt.Sprintf("table_schema='%s'", database))
+	}
 	if part {
-		query = query + " and table_comment like '%" + definition.PartitionIdentifier + "%'"
+		where = append(where, "table_comment like '%"+definition.PartitionIdentifier+"%'")
 	} else if comment {
-		query = query + " and table_comment !=''"
+		where = append(where, "table_comment !=''")
+	}
+
+	if len(where) > 0 {
+		query = query + " where "
+		for i, condition := range where {
+			if i != 0 {
+				query = query + " and "
+			}
+			query = query + condition
+		}
 	}
 
 	db, er := connect()
@@ -104,13 +117,14 @@ func ShowTables(database string, comment, part bool) ([]Table, error) {
 	//var desc Table
 	var count int
 	type row struct {
-		name    string
-		comment sql.NullString
+		database string
+		name     string
+		comment  sql.NullString
 	}
 	var parsed []row
 	for tables.Next() {
 		var r row
-		err := tables.Scan(&r.name, &r.comment)
+		err := tables.Scan(&r.database, &r.name, &r.comment)
 		if err != nil {
 			return nil, err
 		}
@@ -121,8 +135,9 @@ func ShowTables(database string, comment, part bool) ([]Table, error) {
 	for i := 0; i < len(parsed); i++ {
 		r := parsed[i]
 		s[i] = Table{
-			Name:    r.name,
-			Comment: r.comment.String,
+			Database: r.database,
+			Name:     r.name,
+			Comment:  r.comment.String,
 		}
 	}
 	return s, nil
