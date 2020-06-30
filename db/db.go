@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
@@ -22,6 +23,7 @@ func connect() (*sql.DB, error) {
 		return nil, err
 	}
 
+	db.SetConnMaxLifetime(time.Second * 30)
 	return db, nil
 }
 
