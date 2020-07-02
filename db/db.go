@@ -13,17 +13,20 @@ import (
 	"github.com/msklnko/kitana/definition"
 )
 
+var db *sql.DB = nil
+
 func connect() (*sql.DB, error) {
-	db, err := sql.Open("mysql", config.Configuration.MySQL().FormatDSN())
-	if err != nil {
-		return nil, err
+	if db == nil {
+		conn, err := sql.Open("mysql", config.Configuration.MySQL().FormatDSN())
+		if err != nil {
+			return nil, err
+		}
+		if err := conn.Ping(); err != nil {
+			return nil, err
+		}
+		conn.SetConnMaxLifetime(time.Second * 30)
+		db = conn
 	}
-
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	db.SetConnMaxLifetime(time.Second * 30)
 	return db, nil
 }
 
