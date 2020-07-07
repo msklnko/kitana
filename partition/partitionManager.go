@@ -14,7 +14,7 @@ func ManageAllDatabasePartitions(ctx context.Context) {
 	logger := xray.ROOT.Fork()
 	logger.Info("Executing manage partition task :time", args.String{N: "time", V: time.Now().UTC().String()})
 
-	tables, err := db.ShowTables("", true, true)
+	tables, err := db.ShowTables("wallet_wtc", true, true)
 	if err != nil {
 		logger.Error("Unable to get partitioned tables :err", args.Error{Err: err})
 		return

@@ -13,15 +13,6 @@ var demon = &cobra.Command{
 	Use:   "daemon",
 	Short: "Run partitioning in daemon",
 	Args: func(cmd *cobra.Command, args []string) error {
-		// TODO implement time from cli
-		//if args[0] != "" {
-		//	atoi, err := strconv.Atoi(args[0])
-		//	if err != nil {
-		//		return err
-		//	}
-		//
-		//	if(atoi)
-		//}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {

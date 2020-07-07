@@ -141,7 +141,7 @@ func ensureNextPartition(database, table string,
 	// Check if partition creation needs
 	if util.Contains(existedPartitions, *nextPartitionName) {
 		logger.Info("Partition :name for :table is already exists",
-			args.Name(*nextPartitionName), args.String{N: "table", V: database + table})
+			args.Name(*nextPartitionName), args.String{N: "table", V: database + "." + table})
 		return nil
 	}
 

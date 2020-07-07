@@ -11,6 +11,7 @@ import (
 	"github.com/mono83/xray/args"
 	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/definition"
+	"github.com/msklnko/kitana/util"
 )
 
 var db *sql.DB = nil
@@ -86,17 +87,17 @@ type Table struct {
 
 // ShowTables Show tables for db schema
 func ShowTables(database string, comment, part bool) ([]Table, error) {
-	var query = "select table_schema, table_name, table_comment from information_schema.tables"
+	var query = "show table status "
 
 	// Collect conditions
 	var where []string
 	if len(database) > 0 {
-		where = append(where, fmt.Sprintf("table_schema='%s'", database))
+		query = query + fmt.Sprintf("from %s", database)
 	}
 	if part {
-		where = append(where, "table_comment like '%"+definition.PartitionIdentifier+"%'")
+		where = append(where, "`comment` like '%"+definition.PartitionIdentifier+"%'")
 	} else if comment {
-		where = append(where, "table_comment !=''")
+		where = append(where, "`comment` !=''")
 	}
 
 	if len(where) > 0 {
@@ -119,33 +120,40 @@ func ShowTables(database string, comment, part bool) ([]Table, error) {
 		return nil, err
 	}
 
-	//var desc Table
-	var count int
-	type row struct {
-		database string
-		name     string
-		comment  sql.NullString
+	columns, err := tables.Columns()
+	if err != nil {
+		return nil, err
 	}
-	var parsed []row
+
+	nameIndex := util.IndexOf("Name", columns)
+	commentIndex := util.IndexOf("Comment", columns)
+
+	var count int
+
+	var rows [][]interface{}
 	for tables.Next() {
-		var r row
-		err := tables.Scan(&r.database, &r.name, &r.comment)
-		if err != nil {
+		row := make([]interface{}, len(columns))
+		for i, _ := range columns {
+			row[i] = new(sql.NullString)
+		}
+		if err := tables.Scan(row...); err != nil {
 			return nil, err
 		}
-		parsed = append(parsed, r)
+		rows = append(rows, row)
 		count++
 	}
-	s := make([]Table, len(parsed))
-	for i := 0; i < len(parsed); i++ {
-		r := parsed[i]
-		s[i] = Table{
-			Database: r.database,
-			Name:     r.name,
-			Comment:  r.comment.String,
+
+	result := make([]Table, count)
+	for i := 0; i < len(rows); i++ {
+		r := rows[i]
+
+		result[i] = Table{
+			Database: database,
+			Name:     r[nameIndex].(*sql.NullString).String,
+			Comment:  r[commentIndex].(*sql.NullString).String,
 		}
 	}
-	return s, nil
+	return result, nil
 }
 
 // CheckTablePresent Check provided table is present
