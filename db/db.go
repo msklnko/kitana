@@ -165,10 +165,8 @@ func CheckTablePresent(database, table string) (bool, error) {
 		panic(er)
 	}
 
-	var res sql.NullInt32
-	err := db.QueryRow("select 1 from information_schema.tables " +
-		"where table_schema = '" + database + "' and table_name = '" + table + "'").Scan(&res)
-	if err != nil {
+	var res sql.NullString
+	if err := db.QueryRow("show tables in " + database + " like '" + table + "'").Scan(&res); err != nil {
 		return false, err
 	}
 
@@ -195,28 +193,26 @@ func InformSchema(database, table string) ([]Partition, bool, string, error) {
 		return nil, false, "", err
 	}
 
-	columns, _ := rows.Columns()
-
 	var count int
-	var parsed [][]interface{}
+	var description string
 	for rows.Next() {
-		row := make([]interface{}, len(columns))
-		for i, _ := range columns {
-			row[i] = new(sql.NullString)
-		}
-		if err := rows.Scan(row...); err != nil {
+		var (
+			name string
+			dsc  string
+		)
+		err = rows.Scan(&name, &dsc)
+		if err := rows.Scan(&name, &dsc); err != nil {
 			return nil, false, "", err
 		}
-		parsed = append(parsed, row)
+		description = dsc
 		count++
 	}
 
 	// Table does not exist
-	if len(parsed) == 0 {
+	if description == "" {
 		return []Partition{}, false, "", nil
 	}
 
-	description := parsed[0][1].(*sql.NullString).String
 	partitioned := strings.Contains(description, "PARTITION BY RANGE")
 
 	// Table exist but not partitioned
