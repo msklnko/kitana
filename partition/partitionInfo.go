@@ -72,7 +72,7 @@ func PartitionsInfo(database, table string) error {
 		func(w *tabwriter.Writer) {
 			for _, partition := range parsed {
 				_, _ = fmt.Fprintf(w,
-					"%s\t%s\t%d\t%s\t%d\n",
+					"%s\t%s\t%d\n",
 					partition.Name, partition.Expression, partition.Limiter)
 			}
 		})
