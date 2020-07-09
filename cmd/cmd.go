@@ -9,9 +9,6 @@ var KitanaCmd = &cobra.Command{}
 
 func init() {
 	KitanaCmd.AddCommand(prtCmd)
-	prtCmd.AddCommand(prtStatus)
-	prtCmd.AddCommand(prtAdd)
-	prtCmd.AddCommand(prtDrop)
 	prtCmd.PersistentFlags().BoolP("show", "s", false, "Show partitions")
 
 	KitanaCmd.AddCommand(showCmd)

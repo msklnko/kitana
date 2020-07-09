@@ -17,6 +17,10 @@ var prtCount *regexp.Regexp
 
 func init() {
 	prtCount = regexp.MustCompile(`(?m)^\+\d*$`)
+
+	prtCmd.AddCommand(prtStatus)
+	prtCmd.AddCommand(prtAdd)
+	prtCmd.AddCommand(prtDrop)
 }
 
 var prtCmd = &cobra.Command{
