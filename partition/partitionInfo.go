@@ -68,12 +68,12 @@ func PartitionsInfo(database, table string) error {
 
 	// Print
 	util.Print(
-		"Name\tExpression\tRows\tCreatedAt\tTill\t",
+		"Name\tExpression\tTill\t",
 		func(w *tabwriter.Writer) {
 			for _, partition := range parsed {
 				_, _ = fmt.Fprintf(w,
 					"%s\t%s\t%d\t%s\t%d\n",
-					partition.Name, partition.Expression, partition.Count, partition.CreatedAt, partition.Limiter)
+					partition.Name, partition.Expression, partition.Limiter)
 			}
 		})
 

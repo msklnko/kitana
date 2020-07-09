@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 )
 
 var db *sql.DB = nil
+var showTablePattern = regexp.MustCompile(`(?s)COMMENT='(\[GM:.*])'|PARTITION BY RANGE \(.(\w+)|PARTITION (\w+) VALUES LESS THAN \((\d+)`)
 
 func connect() (*sql.DB, error) {
 	if db == nil {
@@ -177,9 +179,7 @@ func CheckTablePresent(database, table string) (bool, error) {
 type Partition struct {
 	Name       string
 	Expression string
-	Count      int64
-	CreatedAt  string
-	Limiter    int64
+	Limiter    int
 }
 
 // InformSchema database rows info about partitions, bool flag identifies table doesn't partitioned or does not exist at all
@@ -189,38 +189,26 @@ func InformSchema(database, table string) ([]Partition, bool, string, error) {
 		panic(er)
 	}
 
-	rows, err := db.Query("select " +
-		"create_options, " +
-		"table_comment, " +
-		"p.partition_name, " +
-		"p.partition_expression, " +
-		"p.table_rows, " +
-		"p.create_time, " +
-		"p.partition_description " +
-		"from information_schema.tables t join information_schema.partitions p on p.table_name = t.table_name " +
-		"where t.table_name='" + table + "' and t.table_schema= '" + database + "'")
+	rows, err := db.Query("show create table " + database + "." + table)
+
 	if err != nil {
 		return nil, false, "", err
 	}
 
-	// Parse
-	type row struct {
-		status  sql.NullString
-		comment sql.NullString
-		name    sql.NullString
-		expr    sql.NullString
-		count   sql.NullInt64
-		cr      sql.NullString
-		desc    sql.NullInt64
-	}
-	var parsed []row
+	columns, _ := rows.Columns()
+
+	var count int
+	var parsed [][]interface{}
 	for rows.Next() {
-		var r row
-		err := rows.Scan(&r.status, &r.comment, &r.name, &r.expr, &r.count, &r.cr, &r.desc)
-		if err != nil {
+		row := make([]interface{}, len(columns))
+		for i, _ := range columns {
+			row[i] = new(sql.NullString)
+		}
+		if err := rows.Scan(row...); err != nil {
 			return nil, false, "", err
 		}
-		parsed = append(parsed, r)
+		parsed = append(parsed, row)
+		count++
 	}
 
 	// Table does not exist
@@ -228,23 +216,39 @@ func InformSchema(database, table string) ([]Partition, bool, string, error) {
 		return []Partition{}, false, "", nil
 	}
 
+	description := parsed[0][1].(*sql.NullString).String
+	partitioned := strings.Contains(description, "PARTITION BY RANGE")
+
 	// Table exist but not partitioned
-	if len(parsed) == 1 && parsed[0].status.String != "partitioned" {
-		return []Partition{}, true, parsed[0].comment.String, nil
+	if !partitioned {
+		return []Partition{}, true, "", nil
 	}
 
-	s := make([]Partition, len(parsed))
-	for i := 0; i < len(parsed); i++ {
-		r := parsed[i]
-		s[i] = Partition{
-			Name:       r.name.String,
-			Expression: r.expr.String,
-			Count:      r.count.Int64,
-			CreatedAt:  r.cr.String,
-			Limiter:    r.desc.Int64,
+	var comment, column string
+	var partitions []Partition
+
+	matched := showTablePattern.FindAllStringSubmatch(description, -1)
+	comment = matched[0][1] // COMMENT='(\[GM:.*])'
+	column = matched[1][2]  // PARTITION BY RANGE \(.(\w+)
+
+	// PARTITION (\w+) VALUES LESS THAN \((\d+)
+	for _, match := range matched {
+		if match[3] != "" && match[4] != "" {
+			limiter, err := strconv.Atoi(match[4])
+
+			if err != nil {
+				return nil, false, "", err
+			}
+
+			partitions = append(partitions, Partition{
+				Name:       match[3],
+				Expression: column,
+				Limiter:    limiter,
+			})
 		}
 	}
-	return s, true, parsed[0].comment.String, nil
+
+	return partitions, true, comment, nil
 }
 
 // AddPartitions Add partitions to existing partitioned table
