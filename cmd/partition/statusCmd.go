@@ -1,15 +1,16 @@
-package cmd
+package partition
 
 import (
 	"errors"
 	"fmt"
-	"github.com/msklnko/kitana/partition"
-	"github.com/spf13/cobra"
 	"os"
 	s "strings"
+
+	"github.com/msklnko/kitana/partition"
+	"github.com/spf13/cobra"
 )
 
-var prtStatus = &cobra.Command{
+var statusCmd = &cobra.Command{
 	Use:     "status",
 	Aliases: []string{"st", "info"},
 	Short:   "Show info about partitions",

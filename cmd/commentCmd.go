@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+	"errors"
 	"strings"
 
 	"github.com/msklnko/kitana/db"
@@ -10,9 +9,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var alterCmtCmd = &cobra.Command{
-	Use:     "cmt",
-	Aliases: []string{"addComment"},
+var commentShowCreate bool
+
+var commentCmd = &cobra.Command{
+	Use:     "comment",
+	Aliases: []string{"addComment", "cmt"},
 	Short:   "Add comment to provided table in supported format [GM:C:T:R:Rc]",
 	Long: "Comment format: [GM:C:T:R:Rc] where \n" +
 		"\tC - column name for partitioning\n" +
@@ -20,29 +21,27 @@ var alterCmtCmd = &cobra.Command{
 		"\tR - retention policy - d (drop), n (none), b (backup)\n" +
 		"\tRc - retention policy - d (drop), n (none), b (backup)\n",
 	Args: cobra.MinimumNArgs(2),
-	PreRun: func(cmd *cobra.Command, args []string) {
+	PreRunE: func(cmd *cobra.Command, args []string) error {
 		comment := args[1]
 		matchString := definition.CommentPattern.MatchString(comment)
 		if !matchString {
-			fmt.Println("invalid comment format, should be [GM:C:T:R:Rc]")
-			os.Exit(1)
+			return errors.New("invalid comment format, should be [GM:C:T:R:Rc]")
 		}
+		return nil
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var tbls = strings.Split(args[0], ".")
-		err := db.AlterComment(tbls[0], tbls[1], args[1])
+		if err := db.AlterComment(tbls[0], tbls[1], args[1]); err != nil {
+			return err
+		}
 
-		value, err := cmd.Flags().GetBool("show")
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
+		if commentShowCreate {
+			return db.ShowCreateTable(tbls[0], tbls[1])
 		}
-		if value {
-			err := db.ShowCreateTable(tbls[0], tbls[1])
-			if err != nil {
-				fmt.Println(err.Error())
-				os.Exit(1)
-			}
-		}
+		return nil
 	},
+}
+
+func init() {
+	commentCmd.Flags().BoolVarP(&commentShowCreate, "show", "s", false, "Show create table after alter")
 }

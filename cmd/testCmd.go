@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/msklnko/kitana/definition"
@@ -11,11 +10,8 @@ import (
 var testCmd = &cobra.Command{
 	Use:   "test pattern",
 	Short: "Tests given string as table comment",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, a []string) error {
-		if len(a) != 1 {
-			return errors.New("exactly one argument expected")
-		}
-
 		def, err := definition.Parse(a[0])
 		if err != nil {
 			return err

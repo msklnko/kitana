@@ -1,16 +1,17 @@
-package cmd
+package partition
 
 import (
 	"errors"
 	"fmt"
+	"os"
+	s "strings"
+
 	"github.com/msklnko/kitana/db"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
-	"os"
-	s "strings"
 )
 
-var prtDrop = &cobra.Command{
+var dropCmd = &cobra.Command{
 	Use:     "drop",
 	Aliases: []string{"rm"},
 	Short:   "Drop partition",

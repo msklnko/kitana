@@ -1,17 +1,18 @@
-package cmd
+package partition
 
 import (
 	"errors"
 	"fmt"
-	"github.com/msklnko/kitana/db"
-	"github.com/msklnko/kitana/partition"
-	"github.com/spf13/cobra"
 	"os"
 	"strconv"
 	s "strings"
+
+	"github.com/msklnko/kitana/db"
+	"github.com/msklnko/kitana/partition"
+	"github.com/spf13/cobra"
 )
 
-var prtAdd = &cobra.Command{
+var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add partition",
 	Args: func(cmd *cobra.Command, args []string) error {
