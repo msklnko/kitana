@@ -14,7 +14,7 @@ import (
 
 //// BatchAdd Add provided count of partitions
 //func BatchAdd(sh, tb string, count int) error {
-//	partitions, exist, comment := db.InformSchema(sh, tb)
+//	partitions, exist, comment := db.GetPartitions(sh, tb)
 //
 //	if !exist {
 //		return errors.New("table " + sh + "." + tb + " doesn't exist\n")
@@ -80,7 +80,7 @@ import (
 
 // ManagePartitions Add next partition if not exist
 func ManagePartitions(database, table string, logger xray.Ray) error {
-	partitions, exist, comment, err := db.InformSchema(database, table)
+	partitions, exist, comment, err := db.GetPartitions(database, table)
 
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func ensureNextPartition(database, table string,
 
 func removeOldPartitions(database, table string, rule *definition.Definition, logger xray.Ray) error {
 	// Existed partitions
-	updatedPartitions, _, _, err := db.InformSchema(database, table)
+	updatedPartitions, _, _, err := db.GetPartitions(database, table)
 	if err != nil {
 		logger.Error("")
 		return err

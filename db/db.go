@@ -180,8 +180,8 @@ type Partition struct {
 	Limiter    int
 }
 
-// InformSchema database rows info about partitions, bool flag identifies table doesn't partitioned or does not exist at all
-func InformSchema(database, table string) ([]Partition, bool, string, error) {
+// GetPartitions database rows info about partitions, bool flag identifies table doesn't partitioned or does not exist at all
+func GetPartitions(database, table string) ([]Partition, bool, string, error) {
 	db, er := connect()
 	if er != nil {
 		panic(er)

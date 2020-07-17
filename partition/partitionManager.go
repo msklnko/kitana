@@ -1,6 +1,7 @@
 package partition
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/mono83/xray"
@@ -10,9 +11,13 @@ import (
 
 // ManageAllDatabasePartitions checking all tables partitioning
 func ManageAllDatabasePartitions(database string, interval time.Duration) {
+	logger := xray.ROOT.Fork()
+	logger.Info("Waiting :time seconds", args.String{
+		N: "time",
+		V: fmt.Sprintf("%.0f", interval.Seconds()),
+	})
 	time.Sleep(interval)
 
-	logger := xray.ROOT.Fork()
 	logger.Info("Executing manage partition task :time", args.String{N: "time", V: time.Now().UTC().String()})
 
 	tables, err := db.ShowTables(database, true, true)

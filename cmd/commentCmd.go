@@ -10,22 +10,29 @@ import (
 )
 
 var commentShowCreate bool
+var commentRules = `Comment format: [GM:C:T:R:Rc] where  
+    GM - identifier
+    C - column name for partitioning 
+    T - partitioning type, ml(monthly), dl(daily)
+    R - retention policy - d(drop), n(none), b(backup)
+    Rc - retention policy - old partition count`
 
 var commentCmd = &cobra.Command{
 	Use:     "comment",
 	Aliases: []string{"addComment", "cmt"},
 	Short:   "Add comment to provided table in supported format [GM:C:T:R:Rc]",
-	Long: `Comment format: [GM:C:T:R:Rc] where \n
-		\tC - column name for partitioning\n 
-		\tT - partitioning type, m for monthly\n" 
-		\tR - retention policy - d (drop), n (none), b (backup)\n 
-		\tRc - retention policy - d (drop), n (none), b (backup)\n`,
-	Args: cobra.MinimumNArgs(2),
+	Long:    commentRules,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 2 {
+			return errors.New("requires two arguments, table name and comment")
+		}
+		return nil
+	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		argument := args[1]
 		matchString := definition.CommentPattern.MatchString(argument)
 		if !matchString {
-			return errors.New("invalid comment format, should be [GM:C:T:R:Rc]")
+			return errors.New("invalid comment format, should be [GM:C:T:R:Rc] \n" + commentRules)
 		}
 		return nil
 	},

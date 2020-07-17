@@ -51,7 +51,7 @@ func ShowTables(database string, comment, part, def bool, logger xray.Ray) error
 
 // PartitionsInfo Print info about partitions
 func PartitionsInfo(database, table string) error {
-	parsed, exist, _, err := db.InformSchema(database, table)
+	parsed, exist, _, err := db.GetPartitions(database, table)
 	if err != nil {
 		return err
 	}
