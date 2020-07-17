@@ -2,8 +2,6 @@ package partition
 
 import (
 	"errors"
-	"fmt"
-	"os"
 	s "strings"
 
 	"github.com/msklnko/kitana/partition"
@@ -24,12 +22,12 @@ var statusCmd = &cobra.Command{
 		}
 		return nil
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var tables = s.Split(args[0], ".")
 		err := partition.PartitionsInfo(tables[0], tables[1])
 		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
+			return err
 		}
+		return nil
 	},
 }

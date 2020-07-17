@@ -6,7 +6,7 @@ import (
 )
 
 // CommentPattern Partitioned comment pattern
-var CommentPattern = regexp.MustCompile(`(?m)^\[GM:\w+:(ml|dl):([dnb]):\d]$`)
+var CommentPattern = regexp.MustCompile(`(?m)^\[GM:\w+:(ml|dl):([dnb]):\d+]$`)
 
 // PartitionIdentifier Partition rule should be started with GM
 var PartitionIdentifier = "GM"

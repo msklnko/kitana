@@ -2,8 +2,6 @@ package partition
 
 import (
 	"errors"
-	"fmt"
-	"os"
 	"strconv"
 	s "strings"
 
@@ -47,29 +45,22 @@ var addCmd = &cobra.Command{
 			return nil
 		}
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var tables = s.Split(args[0], ".")
 
 		limiter, err := strconv.ParseInt(args[2], 10, 64)
 		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
+			return err
 		}
 
 		err = db.AddPartitions(tables[0], tables[1], map[string]int64{args[1]: limiter})
 		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-
-		show, err := cmd.Flags().GetBool("show")
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
+			return err
 		}
 
 		if show {
 			_ = partition.PartitionsInfo(tables[0], tables[1])
 		}
+		return nil
 	},
 }

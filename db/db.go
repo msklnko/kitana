@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"github.com/msklnko/kitana/definition"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
 	"github.com/msklnko/kitana/config"
-	"github.com/msklnko/kitana/definition"
 	"github.com/msklnko/kitana/util"
 )
 

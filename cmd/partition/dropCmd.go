@@ -2,8 +2,6 @@ package partition
 
 import (
 	"errors"
-	"fmt"
-	"os"
 	s "strings"
 
 	"github.com/msklnko/kitana/db"
@@ -26,8 +24,7 @@ var dropCmd = &cobra.Command{
 			}
 			present, err := db.CheckTablePresent(tables[0], tables[1])
 			if err != nil {
-				fmt.Println(err.Error())
-				os.Exit(1)
+				return err
 			}
 			if !present {
 				return errors.New("table " + args[0] + " does not exist")
@@ -37,26 +34,19 @@ var dropCmd = &cobra.Command{
 			return nil
 		}
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var tables = s.Split(args[0], ".")
 		err := db.DropPartition(tables[0], tables[1], []string{args[1]})
 		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-
-		show, err := cmd.Flags().GetBool("show")
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
+			return err
 		}
 
 		if show {
 			err := partition.PartitionsInfo(tables[0], tables[1])
 			if err != nil {
-				fmt.Println(err.Error())
-				os.Exit(1)
+				return err
 			}
 		}
+		return nil
 	},
 }

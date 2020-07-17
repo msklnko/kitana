@@ -7,6 +7,7 @@ import (
 )
 
 var prtCount = regexp.MustCompile(`(?m)^\+\d*$`)
+var show bool
 
 // PartitionCmd is a main command for partitioning
 var PartitionCmd = &cobra.Command{
@@ -16,7 +17,7 @@ var PartitionCmd = &cobra.Command{
 }
 
 func init() {
-	PartitionCmd.PersistentFlags().BoolP("show", "s", false, "Show partitions")
+	PartitionCmd.PersistentFlags().BoolVarP(&show, "show", "s", false, "Show partitions")
 
 	PartitionCmd.AddCommand(
 		statusCmd,
