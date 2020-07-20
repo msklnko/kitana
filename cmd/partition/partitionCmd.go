@@ -13,7 +13,7 @@ var show bool
 var PartitionCmd = &cobra.Command{
 	Use:     "partition",
 	Aliases: []string{"prt"},
-	Short:   "Used either to obtain information about information_schema.partitions",
+	Short:   "Used either to obtain information about partitions",
 }
 
 func init() {
