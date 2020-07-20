@@ -155,7 +155,7 @@ func removeOldPartitions(database, table string, rule *definition.Definition, fo
 					return err
 				}
 				logger.Info(fmt.Sprintf("%s was removed", partitionToRemove))
-				time.Sleep(1 * time.Second)
+				time.Sleep(500 * time.Millisecond)
 			}
 			logger.Info("Cleaning partitions were finished")
 		}
