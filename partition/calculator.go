@@ -72,14 +72,14 @@ func keepMonth(count int) []string {
 
 func keepDaily(count int) []string {
 	var keepAlive []string
-	date := now.New(time.Now().UTC().AddDate(0, 0, 1)).BeginningOfMonth()
+	date := now.New(time.Now().UTC().AddDate(0, 0, 1)).BeginningOfDay()
 	keepAlive = append(keepAlive, prefix+date.Format(dayFormat))
 
 	iterates := count
-	for iterates == 0 {
+	for iterates > 0 {
 		date = date.AddDate(0, 0, -1)
 		keepAlive = append(keepAlive, prefix+date.Format(dayFormat))
-		iterates -= iterates
+		iterates--
 	}
 	return keepAlive
 }

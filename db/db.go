@@ -278,7 +278,7 @@ func AddPartitions(database, table string, partitions map[string]int64) error {
 func DropPartition(database, table string, partitions []string) error {
 	db, er := connect()
 	if er != nil {
-		panic(er)
+		return er
 	}
 
 	_, err := db.Query(fmt.Sprintf(

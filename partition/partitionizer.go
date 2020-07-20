@@ -2,8 +2,10 @@ package partition
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	s "strings"
+	"time"
 
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
@@ -79,7 +81,7 @@ import (
 //}
 
 // ManagePartitions Add next partition if not exist
-func ManagePartitions(database, table string, logger xray.Ray) error {
+func ManagePartitions(database, table string, forceDelete bool, logger xray.Ray) error {
 	partitions, exist, comment, err := db.GetPartitions(database, table)
 
 	if err != nil {
@@ -108,7 +110,7 @@ func ManagePartitions(database, table string, logger xray.Ray) error {
 
 	// Need to delete unnecessary
 	if rule.Rp == definition.D || rule.Rp == definition.B {
-		err := removeOldPartitions(database, table, rule, logger)
+		err := removeOldPartitions(database, table, rule, forceDelete, logger)
 		if err != nil {
 			return err
 		}
@@ -160,7 +162,7 @@ func ensureNextPartition(database, table string,
 	return nil
 }
 
-func removeOldPartitions(database, table string, rule *definition.Definition, logger xray.Ray) error {
+func removeOldPartitions(database, table string, rule *definition.Definition, forceDelete bool, logger xray.Ray) error {
 	// Existed partitions
 	updatedPartitions, _, _, err := db.GetPartitions(database, table)
 	if err != nil {
@@ -189,6 +191,7 @@ func removeOldPartitions(database, table string, rule *definition.Definition, lo
 		if rule.Rp == definition.B {
 			for _, name := range remove {
 				duplicateTable := table + "_" + name
+				logger.Info(fmt.Sprintf("Creating backup for %s", duplicateTable))
 				err := db.CreateTableDuplicate(database, table, duplicateTable)
 				if err != nil {
 					logger.Error("Error occurs during backup partition process :name, :err",
@@ -204,9 +207,23 @@ func removeOldPartitions(database, table string, rule *definition.Definition, lo
 			}
 		}
 
-		err := db.DropPartition(database, table, remove)
-		if err != nil {
-			return err
+		if forceDelete {
+			logger.Info("Forced drop partitions")
+			err := db.DropPartition(database, table, remove)
+			if err != nil {
+				return err
+			}
+		} else {
+			logger.Info("Drop partitions one by one")
+			for _, partitionToRemove := range remove {
+				err := db.DropPartition(database, table, []string{partitionToRemove})
+				if err != nil {
+					return err
+				}
+				logger.Info(fmt.Sprintf("%s was removed", partitionToRemove))
+				time.Sleep(1 * time.Second)
+			}
+			logger.Info("Cleaning partitions were finished")
 		}
 	}
 	return nil

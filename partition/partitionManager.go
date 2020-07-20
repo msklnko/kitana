@@ -10,7 +10,7 @@ import (
 )
 
 // ManageAllDatabasePartitions checking all tables partitioning
-func ManageAllDatabasePartitions(database string, interval time.Duration) {
+func ManageAllDatabasePartitions(database string, forceDelete bool, interval time.Duration) {
 	logger := xray.ROOT.Fork()
 	logger.Info("Waiting :time seconds", args.String{
 		N: "time",
@@ -30,12 +30,12 @@ func ManageAllDatabasePartitions(database string, interval time.Duration) {
 		logger.Debug("Checking :name table", args.Name(table.Name))
 
 		// Manage
-		err := ManagePartitions(table.Database, table.Name, logger)
+		err := ManagePartitions(table.Database, table.Name, forceDelete, logger)
 
 		if err != nil {
 			logger.Error("Error occurs while managing partitions :err", args.Error{Err: err})
 			continue
 		}
 	}
-	ManageAllDatabasePartitions(database, interval)
+	ManageAllDatabasePartitions(database, forceDelete, interval)
 }

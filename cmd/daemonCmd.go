@@ -9,6 +9,7 @@ import (
 )
 
 var daemonRefreshInterval time.Duration
+var forceDelete bool
 
 var daemonCmd = &cobra.Command{
 	Use:   "daemon",
@@ -23,7 +24,7 @@ var daemonCmd = &cobra.Command{
 		if daemonRefreshInterval < 30*time.Second {
 			return errors.New("illegal refresh interval " + daemonRefreshInterval.String())
 		}
-		partition.ManageAllDatabasePartitions(args[0], daemonRefreshInterval)
+		partition.ManageAllDatabasePartitions(args[0], forceDelete, daemonRefreshInterval)
 		return nil
 	},
 }
@@ -35,5 +36,13 @@ func init() {
 		"r",
 		time.Second*30,
 		"Daemon refresh interval",
+	)
+
+	daemonCmd.Flags().BoolVarP(
+		&forceDelete,
+		"forceDelete",
+		"f",
+		false,
+		"Delete partitions with one alter",
 	)
 }
