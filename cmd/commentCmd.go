@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"github.com/msklnko/kitana/partition"
 	"strings"
 
 	"github.com/msklnko/kitana/config"
@@ -11,6 +12,7 @@ import (
 )
 
 var commentShowCreate bool
+var commentForcePartition bool
 var commentRules = `Comment format: [GM:C:T:R:Rc] where  
     GM - identifier
     C - column name for partitioning 
@@ -49,6 +51,13 @@ var commentCmd = &cobra.Command{
 			return err
 		}
 
+		if commentForcePartition {
+			err = partition.PartitionTable(connection, arguments[0], arguments[1], 3)
+			if err != nil {
+				return err
+			}
+		}
+
 		if commentShowCreate {
 			return db.ShowCreateTable(connection, arguments[0], arguments[1])
 		}
@@ -58,4 +67,5 @@ var commentCmd = &cobra.Command{
 
 func init() {
 	commentCmd.Flags().BoolVarP(&commentShowCreate, "show", "s", false, "Show create table after alter")
+	commentCmd.Flags().BoolVarP(&commentForcePartition, "forcePartition", "f", false, "Force table partitioning")
 }

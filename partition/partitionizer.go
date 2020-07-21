@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	s "strings"
+	"strings"
 	"time"
 
 	"github.com/mono83/xray"
@@ -67,7 +67,7 @@ func ensureNextPartition(
 	})
 
 	// Calculate next partition
-	nextPartitionName, nextPartitionLimiter, err := Next(rule.PartitionType, logger)
+	nextPartitionName, nextPartitionLimiter, err := NextOne(rule.PartitionType, logger)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func removeOldPartitions(
 	}
 	if len(remove) > 0 {
 		logger.Info("Partitions :name from :table would be removed",
-			args.Name(s.Join(remove, ",")),
+			args.Name(strings.Join(remove, ",")),
 			args.String{N: "table", V: database + "." + table})
 
 		if rule.Rp == definition.B {
@@ -175,5 +175,56 @@ func removeOldPartitions(
 			logger.Info("Cleaning partitions were finished")
 		}
 	}
+	return nil
+}
+
+func PartitionTable(connection *sql.DB, database, table string, count int) error {
+	logger := xray.ROOT.Fork()
+	logger.Info("Execution partition :name", args.Name(table))
+
+	_, partitioned, comment, err := db.GetPartitions(connection, database, table)
+
+	if err != nil {
+		return err
+	}
+	if partitioned {
+		return errors.New(fmt.Sprintf("Table %s is already paritioned", table))
+	}
+
+	// Parse comment
+	parsedComment, err := definition.Parse(comment)
+	if err != nil {
+		return err
+	}
+
+	partitions, err := NextSeveral(parsedComment.PartitionType, count, true, logger)
+	if err != nil {
+		return err
+	}
+
+	err = db.PartitionTable(connection, database, table, parsedComment.Column, partitions)
+	if err != nil {
+		if strings.Contains(err.Error(), "A PRIMARY KEY must include all columns in") {
+
+			index, err := db.GetPrimaryIndex(connection, database, table)
+			if err != nil {
+				return err
+			}
+
+			return errors.New(
+				fmt.Sprintf(
+					"A PRIMARY KEY must include all columns in the table's partitioning function,"+
+						" existing PRIMARY KEY(%s) should be updated to (%s,`%s`), ",
+					index,
+					index,
+					parsedComment.Column,
+				),
+			)
+		}
+
+		return err
+	}
+
+	logger.Info("Table :name partitioning was finished", args.Name(table))
 	return nil
 }

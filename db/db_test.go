@@ -2,6 +2,7 @@ package db
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -14,6 +15,25 @@ func TestSqlAddPartitions(t *testing.T) {
 		"alter table database.table  add partition (partition first values less than (1),partition second values less than (2))",
 		"Two queries should be the same.",
 	)
+}
+
+func TestSqlPartitionTable(t *testing.T) {
+	query := sqlPartitionTable(
+		"database",
+		"table",
+		"createdAt",
+		map[string]time.Time{
+			"first":  time.Unix(1, 0),
+			"second": time.Unix(2, 0),
+		},
+	)
+	assert.Equalf(
+		t,
+		query,
+		"alter table database.table partition by range (createdAt) (partition first values less than (1),partition second values less than (2))",
+		"Two queries should be the same.",
+	)
+
 }
 
 func TestSqlTableStatus(t *testing.T) {

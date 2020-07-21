@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
@@ -14,6 +16,7 @@ import (
 )
 
 var showTablePattern = regexp.MustCompile(`(?s)COMMENT='(\[GM:.*])'|PARTITION BY RANGE \(.(\w+)|PARTITION (\w+) VALUES LESS THAN \((\d+)`)
+var primaryIndexPattern = regexp.MustCompile(`(?s)PRIMARY KEY \((.+)\),`)
 
 // AlterComment Execute `ALTER COMMENT schema.table`
 func AlterComment(db *sql.DB, database, table, comment string) error {
@@ -157,6 +160,35 @@ type Partition struct {
 	Limiter    int
 }
 
+func GetPrimaryIndex(db *sql.DB, database, table string) (string, error) {
+	var query = "show create table " + database + "." + table
+	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
+
+	rows, err := db.Query(query)
+
+	if err != nil {
+		return "", err
+	}
+
+	var count int
+	var description string
+	for rows.Next() {
+		var (
+			name string
+			dsc  string
+		)
+		err = rows.Scan(&name, &dsc)
+		if err := rows.Scan(&name, &dsc); err != nil {
+			return "", err
+		}
+		description = dsc
+		count++
+	}
+
+	index := primaryIndexPattern.FindStringSubmatch(description)
+	return index[1], nil
+}
+
 // GetPartitions database rows info about partitions, bool flag identifies table doesn't partitioned or does not exist at all
 func GetPartitions(db *sql.DB, database, table string) ([]Partition, bool, string, error) {
 	var query = "show create table " + database + "." + table
@@ -188,12 +220,8 @@ func GetPartitions(db *sql.DB, database, table string) ([]Partition, bool, strin
 		return []Partition{}, false, "", nil
 	}
 
+	// Check table is partitioned
 	partitioned := strings.Contains(description, "PARTITION BY RANGE")
-
-	// Table exist but not partitioned
-	if !partitioned {
-		return []Partition{}, true, "", nil
-	}
 
 	var comment, column string
 	var partitions []Partition
@@ -220,15 +248,23 @@ func GetPartitions(db *sql.DB, database, table string) ([]Partition, bool, strin
 		}
 	}
 
-	return partitions, true, comment, nil
+	return partitions, partitioned, comment, nil
 }
 
 func sqlAddPartitions(database, table string, partitions map[string]int64) string {
 	// Build sql for each partition
 	var ps []string
-	for n, l := range partitions {
-		ps = append(ps, "partition "+n+" values less than ("+strconv.FormatInt(l, 10)+")")
+
+	keys := make([]string, 0, len(partitions))
+	for k := range partitions {
+		keys = append(keys, k)
 	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		ps = append(ps, "partition "+key+" values less than ("+strconv.FormatInt(partitions[key], 10)+")")
+	}
+
 	return fmt.Sprintf(
 		`alter table %s.%s  add partition (%s)`,
 		database, table, strings.Join(ps[:], ","),
@@ -315,4 +351,31 @@ func ExchangePartition(db *sql.DB, database, table, duplicateTable, name string)
 	_, err := db.Exec(query)
 
 	return err
+}
+
+func PartitionTable(db *sql.DB, database, table, rangeBy string, partitions map[string]time.Time) error {
+	query := sqlPartitionTable(database, table, rangeBy, partitions)
+	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
+
+	_, err := db.Exec(query)
+	return err
+}
+
+func sqlPartitionTable(database, table, rangeBy string, partitions map[string]time.Time) string {
+	// Build sql for each partition
+	var ps []string
+
+	keys := make([]string, 0, len(partitions))
+	for k := range partitions {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		ps = append(ps, "partition "+key+" values less than ("+strconv.FormatInt(partitions[key].Unix(), 10)+")")
+	}
+	return fmt.Sprintf(
+		`alter table %s.%s partition by range (%s) (%s)`,
+		database, table, rangeBy, strings.Join(ps[:], ","),
+	)
 }

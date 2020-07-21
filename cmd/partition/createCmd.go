@@ -2,15 +2,14 @@ package partition
 
 import (
 	"errors"
-	"strings"
-
-	"github.com/mono83/xray"
 	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/partition"
+	"strings"
+
 	"github.com/spf13/cobra"
 )
 
-var createForceDelete bool
+var createCountNewPartitions int
 
 var createCmd = &cobra.Command{
 	Use:     "create",
@@ -27,30 +26,24 @@ var createCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		splitted := strings.Split(args[0], ".")
-		db, err := config.Connect()
+		var tables = strings.Split(args[0], ".")
+
+		connection, err := config.Connect()
 		if err != nil {
 			return err
 		}
-		if err := partition.ManagePartitions(
-			db,
-			splitted[0],
-			splitted[1],
-			createForceDelete,
-			xray.ROOT.Fork(),
-		); err != nil {
-			return err
-		}
-		return nil
+
+		err = partition.PartitionTable(connection, tables[0], tables[1], createCountNewPartitions)
+		return err
 	},
 }
 
 func init() {
-	actualizeCmd.Flags().BoolVarP(
-		&createForceDelete,
-		"forceDelete",
-		"f",
-		false,
-		"Delete partitions with one alter",
+	PartitionCmd.PersistentFlags().IntVarP(
+		&createCountNewPartitions,
+		"count",
+		"c",
+		3,
+		"Number of partitions to create in advance, default = 3",
 	)
 }

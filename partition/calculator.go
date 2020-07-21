@@ -15,7 +15,7 @@ const monthFormat = "200601"
 const dayFormat = "20060102"
 
 // Next Calculate next partition name and time
-func Next(tp definition.Type, logger xray.Ray) (*string, *time.Time, error) {
+func NextOne(tp definition.Type, logger xray.Ray) (*string, *time.Time, error) {
 	logger.Debug("calculating next partition name and limiter, type :type", args.Type(tp))
 	if tp == definition.Ml {
 		name, limiter := nextMonth()
@@ -40,6 +40,44 @@ func nextDaily() (*string, *time.Time) {
 	var name = prefix + date.Format(dayFormat)
 	var limiter = now.New(date.AddDate(0, 0, 1)).BeginningOfDay()
 	return &name, &limiter
+}
+
+// Next Calculate next partition name and time
+func NextSeveral(tp definition.Type, count int, withCurrent bool, logger xray.Ray) (map[string]time.Time, error) {
+	logger.Debug("calculating current partition name and limiter, type :type", args.Type(tp))
+	if tp == definition.Ml {
+		return nextMonths(count, withCurrent), nil
+	} else if tp == definition.Dl {
+		return nextDays(count, withCurrent), nil
+	} else {
+		return nil, errors.New("not supported partition type " + tp.String())
+	}
+}
+
+func nextMonths(count int, withCurrent bool) map[string]time.Time {
+	var date = time.Now().UTC()
+	if !withCurrent {
+		date = date.AddDate(0, 1, 0)
+	}
+	result := make(map[string]time.Time)
+	for i := 0; i <= count; i++ {
+		date = date.AddDate(0, 1, 0)
+		result[prefix+date.Format(monthFormat)] = now.New(date).BeginningOfMonth()
+	}
+	return result
+}
+
+func nextDays(count int, withCurrent bool) map[string]time.Time {
+	var date = time.Now().UTC()
+	if !withCurrent {
+		date = date.AddDate(0, 0, 1)
+	}
+	result := make(map[string]time.Time)
+	for i := 0; i <= count; i++ {
+		date = date.AddDate(0, 1, 0)
+		result[prefix+date.Format(monthFormat)] = now.New(date).BeginningOfMonth()
+	}
+	return result
 }
 
 // KeepAlive Calculate partition names to stay
