@@ -5,9 +5,12 @@ import (
 	"strings"
 
 	"github.com/mono83/xray"
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
 )
+
+var createForceDelete bool
 
 var createCmd = &cobra.Command{
 	Use:     "create",
@@ -25,7 +28,17 @@ var createCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		splitted := strings.Split(args[0], ".")
-		if err := partition.ManagePartitions(splitted[0], splitted[1], forceDelete, xray.ROOT.Fork()); err != nil {
+		db, err := config.Connect()
+		if err != nil {
+			return err
+		}
+		if err := partition.ManagePartitions(
+			db,
+			splitted[0],
+			splitted[1],
+			createForceDelete,
+			xray.ROOT.Fork(),
+		); err != nil {
 			return err
 		}
 		return nil
@@ -34,7 +47,7 @@ var createCmd = &cobra.Command{
 
 func init() {
 	actualizeCmd.Flags().BoolVarP(
-		&forceDelete,
+		&createForceDelete,
 		"forceDelete",
 		"f",
 		false,

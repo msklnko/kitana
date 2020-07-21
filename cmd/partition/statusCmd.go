@@ -2,8 +2,9 @@ package partition
 
 import (
 	"errors"
-	s "strings"
+	"strings"
 
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
 )
@@ -16,15 +17,21 @@ var statusCmd = &cobra.Command{
 		if len(args) != 1 {
 			return errors.New("table name is missing")
 		}
-		var tables = s.Split(args[0], ".")
+		var tables = strings.Split(args[0], ".")
 		if len(tables) != 2 {
 			return errors.New("invalid property, should be schema+table name")
 		}
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var tables = s.Split(args[0], ".")
-		err := partition.PartitionsInfo(tables[0], tables[1])
+		var tables = strings.Split(args[0], ".")
+
+		connection, err := config.Connect()
+		if err != nil {
+			return err
+		}
+
+		err = partition.PartitionsInfo(connection, tables[0], tables[1])
 		if err != nil {
 			return err
 		}

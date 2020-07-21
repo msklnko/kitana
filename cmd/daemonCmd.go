@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +25,12 @@ var daemonCmd = &cobra.Command{
 		if daemonRefreshInterval < 30*time.Second {
 			return errors.New("illegal refresh interval " + daemonRefreshInterval.String())
 		}
-		partition.ManageAllDatabasePartitions(args[0], forceDelete, daemonRefreshInterval)
+		db, err := config.Connect()
+		if err != nil {
+			return err
+		}
+
+		partition.ManageAllDatabasePartitions(db, args[0], forceDelete, daemonRefreshInterval)
 		return nil
 	},
 }

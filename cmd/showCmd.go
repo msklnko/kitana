@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/mono83/xray"
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +20,13 @@ var showCmd = &cobra.Command{
 		if len(args) > 0 {
 			database = args[0]
 		}
-		return partition.ShowTables(database, commented, partitioned, description, xray.ROOT.Fork())
+
+		db, err := config.Connect()
+		if err != nil {
+			return err
+		}
+
+		return partition.ShowTables(db, database, commented, partitioned, description, xray.ROOT.Fork())
 	},
 }
 

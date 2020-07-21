@@ -1,6 +1,7 @@
 package partition
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"sort"
@@ -15,8 +16,8 @@ import (
 )
 
 // ManagePartitions Add next partition if not exist
-func ManagePartitions(database, table string, forceDelete bool, logger xray.Ray) error {
-	partitions, exist, comment, err := db.GetPartitions(database, table)
+func ManagePartitions(connection *sql.DB, database, table string, forceDelete bool, logger xray.Ray) error {
+	partitions, exist, comment, err := db.GetPartitions(connection, database, table)
 
 	if err != nil {
 		return err
@@ -37,14 +38,14 @@ func ManagePartitions(database, table string, forceDelete bool, logger xray.Ray)
 	}
 
 	// Create next partitions
-	err = ensureNextPartition(database, table, rule, partitions, logger)
+	err = ensureNextPartition(connection, database, table, rule, partitions, logger)
 	if err != nil {
 		return err
 	}
 
 	// Need to delete unnecessary
 	if rule.Rp == definition.D || rule.Rp == definition.B {
-		err := removeOldPartitions(database, table, rule, forceDelete, logger)
+		err := removeOldPartitions(connection, database, table, rule, forceDelete, logger)
 		if err != nil {
 			return err
 		}
@@ -53,10 +54,13 @@ func ManagePartitions(database, table string, forceDelete bool, logger xray.Ray)
 	return nil
 }
 
-func ensureNextPartition(database, table string,
+func ensureNextPartition(
+	connection *sql.DB,
+	database, table string,
 	rule *definition.Definition,
 	partitions []db.Partition,
-	logger xray.Ray) error {
+	logger xray.Ray,
+) error {
 	// Sort partitions (just in case)
 	sort.SliceStable(partitions, func(i, j int) bool {
 		return partitions[i].Limiter < partitions[j].Limiter
@@ -82,7 +86,12 @@ func ensureNextPartition(database, table string,
 	}
 
 	// Alter partition
-	err = db.AddPartitions(database, table, map[string]int64{*nextPartitionName: nextPartitionLimiter.Unix()})
+	err = db.AddPartitions(
+		connection,
+		database,
+		table,
+		map[string]int64{*nextPartitionName: nextPartitionLimiter.Unix()},
+	)
 
 	if err != nil {
 		logger.Error("Partition :name for :table was not created because of :error",
@@ -96,9 +105,15 @@ func ensureNextPartition(database, table string,
 	return nil
 }
 
-func removeOldPartitions(database, table string, rule *definition.Definition, forceDelete bool, logger xray.Ray) error {
+func removeOldPartitions(
+	connection *sql.DB, database,
+	table string,
+	rule *definition.Definition,
+	forceDelete bool,
+	logger xray.Ray,
+) error {
 	// Existed partitions
-	updatedPartitions, _, _, err := db.GetPartitions(database, table)
+	updatedPartitions, _, _, err := db.GetPartitions(connection, database, table)
 	if err != nil {
 		logger.Error("")
 		return err
@@ -126,13 +141,13 @@ func removeOldPartitions(database, table string, rule *definition.Definition, fo
 			for _, name := range remove {
 				duplicateTable := table + "_" + name
 				logger.Info(fmt.Sprintf("Creating backup for %s", duplicateTable))
-				err := db.CreateTableDuplicate(database, table, duplicateTable)
+				err := db.CreateTableDuplicate(connection, database, table, duplicateTable)
 				if err != nil {
 					logger.Error("Error occurs during backup partition process :name, :err",
 						args.Name(database+"."+table), args.Error{Err: err})
 					return err
 				}
-				err = db.ExchangePartition(database, table, duplicateTable, name)
+				err = db.ExchangePartition(connection, database, table, duplicateTable, name)
 				if err != nil {
 					logger.Error("Error occurs during exchange partition process :name, :err",
 						args.Name(database+"."+table), args.Error{Err: err})
@@ -143,14 +158,14 @@ func removeOldPartitions(database, table string, rule *definition.Definition, fo
 
 		if forceDelete {
 			logger.Info("Forced drop partitions")
-			err := db.DropPartition(database, table, remove)
+			err := db.DropPartition(connection, database, table, remove)
 			if err != nil {
 				return err
 			}
 		} else {
 			logger.Info("Drop partitions one by one")
 			for _, partitionToRemove := range remove {
-				err := db.DropPartition(database, table, []string{partitionToRemove})
+				err := db.DropPartition(connection, database, table, []string{partitionToRemove})
 				if err != nil {
 					return err
 				}

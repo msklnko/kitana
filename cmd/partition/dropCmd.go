@@ -2,8 +2,9 @@ package partition
 
 import (
 	"errors"
-	s "strings"
+	"strings"
 
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/db"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
@@ -18,11 +19,15 @@ var dropCmd = &cobra.Command{
 		case 0:
 			return errors.New("missing arguments (table, partition name)")
 		case 1:
-			var tables = s.Split(args[0], ".")
+			var tables = strings.Split(args[0], ".")
 			if len(tables) != 2 {
 				return errors.New("invalid property, should be schema+table name")
 			}
-			present, err := db.CheckTablePresent(tables[0], tables[1])
+			connection, err := config.Connect()
+			if err != nil {
+				return err
+			}
+			present, err := db.CheckTablePresent(connection, tables[0], tables[1])
 			if err != nil {
 				return err
 			}
@@ -35,14 +40,18 @@ var dropCmd = &cobra.Command{
 		}
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var tables = s.Split(args[0], ".")
-		err := db.DropPartition(tables[0], tables[1], []string{args[1]})
+		var tables = strings.Split(args[0], ".")
+		connection, err := config.Connect()
+		if err != nil {
+			return err
+		}
+		err = db.DropPartition(connection, tables[0], tables[1], []string{args[1]})
 		if err != nil {
 			return err
 		}
 
 		if show {
-			err := partition.PartitionsInfo(tables[0], tables[1])
+			err := partition.PartitionsInfo(connection, tables[0], tables[1])
 			if err != nil {
 				return err
 			}

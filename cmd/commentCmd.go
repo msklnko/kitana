@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/db"
 	"github.com/msklnko/kitana/definition"
 	"github.com/spf13/cobra"
@@ -38,12 +39,18 @@ var commentCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var arguments = strings.Split(args[0], ".")
-		if err := db.AlterComment(arguments[0], arguments[1], args[1]); err != nil {
+
+		connection, err := config.Connect()
+		if err != nil {
+			return err
+		}
+
+		if err := db.AlterComment(connection, arguments[0], arguments[1], args[1]); err != nil {
 			return err
 		}
 
 		if commentShowCreate {
-			return db.ShowCreateTable(arguments[0], arguments[1])
+			return db.ShowCreateTable(connection, arguments[0], arguments[1])
 		}
 		return nil
 	},

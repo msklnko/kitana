@@ -1,6 +1,7 @@
 package partition
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 )
 
 // ManageAllDatabasePartitions checking all tables partitioning
-func ManageAllDatabasePartitions(database string, forceDelete bool, interval time.Duration) {
+func ManageAllDatabasePartitions(connection *sql.DB, database string, forceDelete bool, interval time.Duration) {
 	logger := xray.ROOT.Fork()
 	logger.Info("Waiting :time seconds", args.String{
 		N: "time",
@@ -20,7 +21,7 @@ func ManageAllDatabasePartitions(database string, forceDelete bool, interval tim
 
 	logger.Info("Executing manage partition task :time", args.String{N: "time", V: time.Now().UTC().String()})
 
-	tables, err := db.ShowTables(database, true, true)
+	tables, err := db.ShowTables(connection, database, true, true)
 	if err != nil {
 		logger.Error("Unable to get partitioned tables :err", args.Error{Err: err})
 		return
@@ -30,12 +31,12 @@ func ManageAllDatabasePartitions(database string, forceDelete bool, interval tim
 		logger.Debug("Checking :name table", args.Name(table.Name))
 
 		// Manage
-		err := ManagePartitions(table.Database, table.Name, forceDelete, logger)
+		err := ManagePartitions(connection, table.Database, table.Name, forceDelete, logger)
 
 		if err != nil {
 			logger.Error("Error occurs while managing partitions :err", args.Error{Err: err})
 			continue
 		}
 	}
-	ManageAllDatabasePartitions(database, forceDelete, interval)
+	ManageAllDatabasePartitions(connection, database, forceDelete, interval)
 }

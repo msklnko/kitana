@@ -2,6 +2,7 @@ package partition
 
 import (
 	"errors"
+	"github.com/msklnko/kitana/config"
 	"strings"
 
 	"github.com/mono83/xray"
@@ -9,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var forceDelete bool
+var actualizeForceDelete bool
 
 var actualizeCmd = &cobra.Command{
 	Use:     "actualize",
@@ -27,7 +28,19 @@ var actualizeCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		splitted := strings.Split(args[0], ".")
-		if err := partition.ManagePartitions(splitted[0], splitted[1], forceDelete, xray.ROOT.Fork()); err != nil {
+
+		connection, err := config.Connect()
+		if err != nil {
+			return err
+		}
+
+		if err := partition.ManagePartitions(
+			connection,
+			splitted[0],
+			splitted[1],
+			actualizeForceDelete,
+			xray.ROOT.Fork(),
+		); err != nil {
 			return err
 		}
 		return nil
@@ -36,9 +49,9 @@ var actualizeCmd = &cobra.Command{
 
 func init() {
 	actualizeCmd.Flags().BoolVarP(
-		&forceDelete,
-		"forceDelete",
-		"f",
+		&actualizeForceDelete,
+		"alter",
+		"a",
 		false,
 		"Delete partitions with one alter",
 	)

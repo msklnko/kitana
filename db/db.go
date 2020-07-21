@@ -6,48 +6,24 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/msklnko/kitana/definition"
 
 	"github.com/mono83/xray"
 	"github.com/mono83/xray/args"
-	"github.com/msklnko/kitana/config"
+	"github.com/msklnko/kitana/definition"
 	"github.com/msklnko/kitana/util"
 )
 
-var db *sql.DB = nil
 var showTablePattern = regexp.MustCompile(`(?s)COMMENT='(\[GM:.*])'|PARTITION BY RANGE \(.(\w+)|PARTITION (\w+) VALUES LESS THAN \((\d+)`)
 
-func connect() (*sql.DB, error) {
-	if db == nil {
-		conn, err := sql.Open("mysql", config.Configuration.MySQL().FormatDSN())
-		if err != nil {
-			return nil, err
-		}
-		if err := conn.Ping(); err != nil {
-			return nil, err
-		}
-		conn.SetConnMaxLifetime(time.Second * 30)
-		db = conn
-	}
-	return db, nil
-}
-
 // AlterComment Execute `ALTER COMMENT schema.table`
-func AlterComment(database, table, comment string) error {
-	db, err := connect()
-	if err != nil {
-		return err
-	}
-
+func AlterComment(db *sql.DB, database, table, comment string) error {
 	var query = fmt.Sprintf(
 		`ALTER TABLE %s.%s COMMENT='%s'`,
 		database, table, comment,
 	)
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
-	_, err = db.Exec(query)
+	_, err := db.Exec(query)
 	if err != nil {
 		xray.ROOT.Fork().Alert("Error adding comment to :name - :err", args.Name(table), args.Error{Err: err})
 		return err
@@ -57,12 +33,7 @@ func AlterComment(database, table, comment string) error {
 }
 
 // ShowCreateTable Execute `databaseOW CREATE TABLE schema.table`
-func ShowCreateTable(database, table string) error {
-	db, err := connect()
-	if err != nil {
-		return err
-	}
-
+func ShowCreateTable(db *sql.DB, database, table string) error {
 	var query = "show create table " + database + "." + table
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
@@ -121,12 +92,7 @@ func sqlTableStatus(database string, comment, part bool) string {
 }
 
 // ShowTables Show tables for db schema
-func ShowTables(database string, comment, part bool) ([]Table, error) {
-	db, err := connect()
-	if err != nil {
-		return nil, err
-	}
-
+func ShowTables(db *sql.DB, database string, comment, part bool) ([]Table, error) {
 	var query = sqlTableStatus(database, comment, part)
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
@@ -172,12 +138,7 @@ func ShowTables(database string, comment, part bool) ([]Table, error) {
 }
 
 // CheckTablePresent Check provided table is present
-func CheckTablePresent(database, table string) (bool, error) {
-	db, err := connect()
-	if err != nil {
-		return false, err
-	}
-
+func CheckTablePresent(db *sql.DB, database, table string) (bool, error) {
 	var query = "show tables in " + database + " like '" + table + "'"
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
@@ -197,12 +158,7 @@ type Partition struct {
 }
 
 // GetPartitions database rows info about partitions, bool flag identifies table doesn't partitioned or does not exist at all
-func GetPartitions(database, table string) ([]Partition, bool, string, error) {
-	db, err := connect()
-	if err != nil {
-		return nil, false, "", err
-	}
-
+func GetPartitions(db *sql.DB, database, table string) ([]Partition, bool, string, error) {
 	var query = "show create table " + database + "." + table
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
@@ -271,41 +227,31 @@ func sqlAddPartitions(database, table string, partitions map[string]int64) strin
 	// Build sql for each partition
 	var ps []string
 	for n, l := range partitions {
-		ps = append(ps, " partition "+n+" values less than ("+strconv.FormatInt(l, 10)+") ")
+		ps = append(ps, "partition "+n+" values less than ("+strconv.FormatInt(l, 10)+")")
 	}
 	return fmt.Sprintf(
-		`alter table %s.%s  add partition ( %s )`,
+		`alter table %s.%s  add partition (%s)`,
 		database, table, strings.Join(ps[:], ","),
 	)
 }
 
 // AddPartitions Add partitions to existing partitioned table
-func AddPartitions(database, table string, partitions map[string]int64) error {
+func AddPartitions(db *sql.DB, database, table string, partitions map[string]int64) error {
 	if len(partitions) == 0 {
 		//Nothing to alter
 		return nil
 	}
-	db, err := connect()
-	if err != nil {
-		return err
-	}
-
 	// Alter
 	var query = sqlAddPartitions(database, table, partitions)
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
-	_, err = db.Query(query)
+	_, err := db.Query(query)
 
 	return err
 }
 
 // DropPartition Drop partition(s) by name
-func DropPartition(database, table string, partitions []string) error {
-	db, er := connect()
-	if er != nil {
-		return er
-	}
-
+func DropPartition(db *sql.DB, database, table string, partitions []string) error {
 	var query = fmt.Sprintf(
 		`alter table %s.%s  drop partition %s`,
 		database, table, strings.Join(partitions, ","),
@@ -318,12 +264,7 @@ func DropPartition(database, table string, partitions []string) error {
 }
 
 // CreateTableDuplicate Create duplicate from table without partitions
-func CreateTableDuplicate(database, table, duplicateTable string) error {
-	db, err := connect()
-	if err != nil {
-		return err
-	}
-
+func CreateTableDuplicate(db *sql.DB, database, table, duplicateTable string) error {
 	logger := xray.ROOT.Fork()
 
 	// Create duplicate table
@@ -333,7 +274,7 @@ func CreateTableDuplicate(database, table, duplicateTable string) error {
 	)
 	logger.Trace("Executing :sql", args.SQL(query))
 
-	_, err = db.Exec(query)
+	_, err := db.Exec(query)
 	if err != nil {
 		return err
 	}
@@ -363,12 +304,7 @@ func CreateTableDuplicate(database, table, duplicateTable string) error {
 }
 
 // ExchangePartition Copy partition data to another table
-func ExchangePartition(database, table, duplicateTable, name string) error {
-	db, err := connect()
-	if err != nil {
-		return err
-	}
-
+func ExchangePartition(db *sql.DB, database, table, duplicateTable, name string) error {
 	// Copy partition
 	var query = fmt.Sprintf(
 		`alter table %s.%s exchange partition %s with table %s.%s`,
@@ -376,7 +312,7 @@ func ExchangePartition(database, table, duplicateTable, name string) error {
 	)
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
-	_, err = db.Exec(query)
+	_, err := db.Exec(query)
 
 	return err
 }
