@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/msklnko/kitana/config"
 	"strings"
+	"time"
 
 	"github.com/mono83/xray"
 	"github.com/msklnko/kitana/partition"
@@ -11,6 +12,7 @@ import (
 )
 
 var actualizeForceDelete bool
+var actualizeDropInterval time.Duration
 
 var actualizeCmd = &cobra.Command{
 	Use:     "actualize",
@@ -39,6 +41,7 @@ var actualizeCmd = &cobra.Command{
 			splitted[0],
 			splitted[1],
 			actualizeForceDelete,
+			actualizeDropInterval,
 			xray.ROOT.Fork(),
 		); err != nil {
 			return err
@@ -54,5 +57,13 @@ func init() {
 		"a",
 		false,
 		"Delete partitions with one alter",
+	)
+
+	actualizeCmd.Flags().DurationVarP(
+		&actualizeDropInterval,
+		"dropInterval",
+		"d",
+		500*time.Millisecond,
+		"Daemon drop partitions interval",
 	)
 }

@@ -16,7 +16,13 @@ import (
 )
 
 // ManagePartitions Add next partition if not exist
-func ManagePartitions(connection *sql.DB, database, table string, forceDelete bool, logger xray.Ray) error {
+func ManagePartitions(
+	connection *sql.DB,
+	database, table string,
+	forceDelete bool,
+	dropInterval time.Duration,
+	logger xray.Ray,
+) error {
 	partitions, exist, comment, err := db.GetPartitions(connection, database, table)
 
 	if err != nil {
@@ -37,6 +43,20 @@ func ManagePartitions(connection *sql.DB, database, table string, forceDelete bo
 		return err
 	}
 
+	// Check consistency, if table was daily/monthly partitioned and comment has same partition type
+	switch len(strings.TrimPrefix(partitions[0].Name, Prefix)) {
+	case len(DayFormat):
+		if definition.Dl != rule.PartitionType {
+			return errors.New("table was partitioned daily, but comment has monthly partition configuration")
+		}
+	case len(MonthFormat):
+		if definition.Ml != rule.PartitionType {
+			return errors.New("table was partitioned monthly, but comment has daily partition configuration")
+		}
+	default:
+		return errors.New("undefined partition type, should be daily or monthly partitioned")
+	}
+
 	// Create next partitions
 	err = ensureNextPartition(connection, database, table, rule, partitions, logger)
 	if err != nil {
@@ -45,7 +65,7 @@ func ManagePartitions(connection *sql.DB, database, table string, forceDelete bo
 
 	// Need to delete unnecessary
 	if rule.Rp == definition.D || rule.Rp == definition.B {
-		err := removeOldPartitions(connection, database, table, rule, forceDelete, logger)
+		err := removeOldPartitions(connection, database, table, rule, forceDelete, dropInterval, logger)
 		if err != nil {
 			return err
 		}
@@ -110,6 +130,7 @@ func removeOldPartitions(
 	table string,
 	rule *definition.Definition,
 	forceDelete bool,
+	dropInterval time.Duration,
 	logger xray.Ray,
 ) error {
 	// Existed partitions
@@ -170,7 +191,7 @@ func removeOldPartitions(
 					return err
 				}
 				logger.Info(fmt.Sprintf("%s was removed", partitionToRemove))
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(dropInterval)
 			}
 			logger.Info("Cleaning partitions were finished")
 		}

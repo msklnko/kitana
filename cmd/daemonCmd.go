@@ -10,6 +10,7 @@ import (
 )
 
 var daemonRefreshInterval time.Duration
+var daemonDropInterval time.Duration
 var forceDelete bool
 
 var daemonCmd = &cobra.Command{
@@ -30,7 +31,7 @@ var daemonCmd = &cobra.Command{
 			return err
 		}
 
-		partition.ManageAllDatabasePartitions(db, args[0], forceDelete, daemonRefreshInterval)
+		partition.ManageAllDatabasePartitions(db, args[0], forceDelete, daemonRefreshInterval, daemonDropInterval)
 		return nil
 	},
 }
@@ -42,6 +43,14 @@ func init() {
 		"r",
 		time.Second*30,
 		"Daemon refresh interval",
+	)
+
+	daemonCmd.Flags().DurationVarP(
+		&daemonDropInterval,
+		"dropInterval",
+		"d",
+		500*time.Millisecond,
+		"Daemon drop partitions interval",
 	)
 
 	daemonCmd.Flags().BoolVarP(

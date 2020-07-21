@@ -10,9 +10,9 @@ import (
 	"github.com/msklnko/kitana/definition"
 )
 
-const prefix = "part"
-const monthFormat = "200601"
-const dayFormat = "20060102"
+const Prefix = "part"
+const MonthFormat = "200601"
+const DayFormat = "20060102"
 
 // Next Calculate next partition name and time
 func NextOne(tp definition.Type, logger xray.Ray) (*string, *time.Time, error) {
@@ -30,14 +30,14 @@ func NextOne(tp definition.Type, logger xray.Ray) (*string, *time.Time, error) {
 
 func nextMonth() (*string, *time.Time) {
 	date := time.Now().UTC().AddDate(0, 1, 0)
-	var name = prefix + date.Format(monthFormat)
+	var name = Prefix + date.Format(MonthFormat)
 	var limiter = now.New(date.AddDate(0, 1, 0)).BeginningOfMonth()
 	return &name, &limiter
 }
 
 func nextDaily() (*string, *time.Time) {
 	date := time.Now().UTC().AddDate(0, 0, 1)
-	var name = prefix + date.Format(dayFormat)
+	var name = Prefix + date.Format(DayFormat)
 	var limiter = now.New(date.AddDate(0, 0, 1)).BeginningOfDay()
 	return &name, &limiter
 }
@@ -62,7 +62,7 @@ func nextMonths(count int, withCurrent bool) map[string]time.Time {
 	result := make(map[string]time.Time)
 	for i := 0; i <= count; i++ {
 		date = date.AddDate(0, 1, 0)
-		result[prefix+date.Format(monthFormat)] = now.New(date).BeginningOfMonth()
+		result[Prefix+date.Format(MonthFormat)] = now.New(date).BeginningOfMonth()
 	}
 	return result
 }
@@ -75,7 +75,7 @@ func nextDays(count int, withCurrent bool) map[string]time.Time {
 	result := make(map[string]time.Time)
 	for i := 0; i <= count; i++ {
 		date = date.AddDate(0, 1, 0)
-		result[prefix+date.Format(monthFormat)] = now.New(date).BeginningOfMonth()
+		result[Prefix+date.Format(MonthFormat)] = now.New(date).BeginningOfMonth()
 	}
 	return result
 }
@@ -97,12 +97,12 @@ func KeepAlive(tp definition.Type, count int, logger xray.Ray) ([]string, error)
 func keepMonth(count int) []string {
 	var keepAlive []string
 	date := now.New(time.Now().UTC().AddDate(0, 1, 0)).BeginningOfMonth()
-	keepAlive = append(keepAlive, prefix+date.Format(monthFormat))
+	keepAlive = append(keepAlive, Prefix+date.Format(MonthFormat))
 
 	iterates := count
 	for iterates > 0 {
 		date = date.AddDate(0, -1, 0)
-		keepAlive = append(keepAlive, prefix+date.Format(monthFormat))
+		keepAlive = append(keepAlive, Prefix+date.Format(MonthFormat))
 		iterates--
 	}
 	return keepAlive
@@ -111,12 +111,12 @@ func keepMonth(count int) []string {
 func keepDaily(count int) []string {
 	var keepAlive []string
 	date := now.New(time.Now().UTC().AddDate(0, 0, 1)).BeginningOfDay()
-	keepAlive = append(keepAlive, prefix+date.Format(dayFormat))
+	keepAlive = append(keepAlive, Prefix+date.Format(DayFormat))
 
 	iterates := count
 	for iterates > 0 {
 		date = date.AddDate(0, 0, -1)
-		keepAlive = append(keepAlive, prefix+date.Format(dayFormat))
+		keepAlive = append(keepAlive, Prefix+date.Format(DayFormat))
 		iterates--
 	}
 	return keepAlive
