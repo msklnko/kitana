@@ -160,6 +160,26 @@ type Partition struct {
 	Limiter    int
 }
 
+func sqlALterPartitions(database, table string, columns []string) string {
+	return fmt.Sprintf(
+		`alter table %s.%s drop primary key, add primary key (%s)`,
+		database,
+		table,
+		strings.Join(columns, ", "),
+	)
+}
+
+// AlterPrimaryIndex update primary index
+func AlterPrimaryIndex(db *sql.DB, database, table string, columns []string) error {
+	var query = sqlALterPartitions(database, table, columns)
+	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
+
+	_, err := db.Exec(query)
+
+	return err
+}
+
+// GetPrimaryIndex get primary index
 func GetPrimaryIndex(db *sql.DB, database, table string) (string, error) {
 	var query = "show create table " + database + "." + table
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
@@ -281,7 +301,7 @@ func AddPartitions(db *sql.DB, database, table string, partitions map[string]int
 	var query = sqlAddPartitions(database, table, partitions)
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
-	_, err := db.Query(query)
+	_, err := db.Exec(query)
 
 	return err
 }
@@ -294,7 +314,7 @@ func DropPartition(db *sql.DB, database, table string, partitions []string) erro
 	)
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
-	_, err := db.Query(query)
+	_, err := db.Exec(query)
 
 	return err
 }
@@ -353,6 +373,7 @@ func ExchangePartition(db *sql.DB, database, table, duplicateTable, name string)
 	return err
 }
 
+// PartitionTable partition table
 func PartitionTable(db *sql.DB, database, table, rangeBy string, partitions map[string]time.Time) error {
 	query := sqlPartitionTable(database, table, rangeBy, partitions)
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
@@ -375,7 +396,7 @@ func sqlPartitionTable(database, table, rangeBy string, partitions map[string]ti
 		ps = append(ps, "partition "+key+" values less than ("+strconv.FormatInt(partitions[key].Unix(), 10)+")")
 	}
 	return fmt.Sprintf(
-		`alter table %s.%s partition by range (%s) (%s)`,
-		database, table, rangeBy, strings.Join(ps[:], ","),
+		`alter table %s.%s partition by range (%s%s%s) (%s)`,
+		database, table, "`", rangeBy, "`", strings.Join(ps[:], ","),
 	)
 }

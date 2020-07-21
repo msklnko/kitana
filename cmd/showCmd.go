@@ -12,9 +12,9 @@ var partitioned, commented, description bool
 // Show all tables from db with partition configs
 var showCmd = &cobra.Command{
 	Use:   "show",
-	Short: "Show all tables",
+	Short: "Show all tables from database (example: `kitana show database`)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		xray.BOOT.Info("Incoming request `show tables`")
+		xray.ROOT.Info("Incoming request `show tables`")
 
 		var database = ""
 		if len(args) > 0 {

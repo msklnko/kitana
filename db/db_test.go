@@ -33,7 +33,17 @@ func TestSqlPartitionTable(t *testing.T) {
 		"alter table database.table partition by range (createdAt) (partition first values less than (1),partition second values less than (2))",
 		"Two queries should be the same.",
 	)
+}
 
+func TestSqlALterPartitions(t *testing.T) {
+	query := sqlALterPartitions("database", "table", []string{"id", "createdAt"})
+
+	assert.Equalf(
+		t,
+		query,
+		"alter table database.table drop primary key, add primary key (id, createdAt)",
+		"Two queries should be the same.",
+	)
 }
 
 func TestSqlTableStatus(t *testing.T) {

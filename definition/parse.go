@@ -11,7 +11,7 @@ import (
 func Parse(cmt string) (*Definition, error) {
 	definition := Definition{}
 	if cmt == "" {
-		return &definition, errors.New("comment is empty")
+		return &definition, errors.New("comment is empty, use `kitana comment database.table [GM:C:T:R:Rc]`")
 	}
 
 	if !CommentPattern.MatchString(cmt) {

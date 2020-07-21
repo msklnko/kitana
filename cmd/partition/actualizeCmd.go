@@ -15,7 +15,7 @@ var actualizeForceDelete bool
 var actualizeCmd = &cobra.Command{
 	Use:     "actualize",
 	Aliases: []string{"update", "manage"},
-	Short:   "Actualize partitions for defined table",
+	Short:   "Actualize partitions for defined table (example: `kitana partition actualize database.table`)",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("table name is required")

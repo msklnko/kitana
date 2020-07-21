@@ -214,7 +214,7 @@ func PartitionTable(connection *sql.DB, database, table string, count int) error
 			return errors.New(
 				fmt.Sprintf(
 					"A PRIMARY KEY must include all columns in the table's partitioning function,"+
-						" existing PRIMARY KEY(%s) should be updated to (%s,`%s`), ",
+						" existing PRIMARY KEY(%s) should be updated to (%s,`%s`), use `kitana index`",
 					index,
 					index,
 					parsedComment.Column,

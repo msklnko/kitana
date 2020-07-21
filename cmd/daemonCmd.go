@@ -14,7 +14,7 @@ var forceDelete bool
 
 var daemonCmd = &cobra.Command{
 	Use:   "daemon",
-	Short: "Run partitioning in daemon",
+	Short: "Run partitioning in daemon (example: `kitana daemon database`)",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("schema name is missing")

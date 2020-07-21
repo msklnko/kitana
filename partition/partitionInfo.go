@@ -52,18 +52,13 @@ func ShowTables(connection *sql.DB, database string, comment, part, def bool, lo
 
 // PartitionsInfo Print info about partitions
 func PartitionsInfo(connection *sql.DB, database, table string) error {
-	parsed, exist, _, err := db.GetPartitions(connection, database, table)
+	parsed, partitioned, _, err := db.GetPartitions(connection, database, table)
 	if err != nil {
 		return err
 	}
 
-	// Table does not exist
-	if !exist {
-		return errors.New("Table '" + database + "." + table + " doesn't exist")
-	}
-
 	// Table is not partitioned
-	if exist && len(parsed) == 0 {
+	if !partitioned {
 		return errors.New("Table '" + database + "." + table + " is not partitioned")
 	}
 

@@ -14,7 +14,7 @@ var createCountNewPartitions int
 var createCmd = &cobra.Command{
 	Use:     "create",
 	Aliases: []string{""},
-	Short:   "Actualize partitions for defined table",
+	Short:   "Partition defined table",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("table name is required")
@@ -39,7 +39,7 @@ var createCmd = &cobra.Command{
 }
 
 func init() {
-	PartitionCmd.PersistentFlags().IntVarP(
+	createCmd.Flags().IntVarP(
 		&createCountNewPartitions,
 		"count",
 		"c",

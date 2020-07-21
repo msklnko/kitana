@@ -23,7 +23,7 @@ var commentRules = `Comment format: [GM:C:T:R:Rc] where
 var commentCmd = &cobra.Command{
 	Use:     "comment",
 	Aliases: []string{"addComment", "cmt"},
-	Short:   "Add comment to provided table in supported format [GM:C:T:R:Rc]",
+	Short:   "Add comment to provided table in supported format [GM:C:T:R:Rc] (example: `kitana comment database.table [GM:createdAt:dl:d:4]`)",
 	Long:    commentRules,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 2 {
