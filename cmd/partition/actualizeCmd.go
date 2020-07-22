@@ -2,11 +2,11 @@ package partition
 
 import (
 	"errors"
-	"github.com/msklnko/kitana/config"
 	"strings"
 	"time"
 
 	"github.com/mono83/xray"
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
 )
