@@ -199,6 +199,7 @@ func removeOldPartitions(
 	return nil
 }
 
+// PartitionTable partition already existed table
 func PartitionTable(connection *sql.DB, database, table string, count int) error {
 	logger := xray.ROOT.Fork()
 	logger.Info("Execution partition :name", args.Name(table))
@@ -209,7 +210,7 @@ func PartitionTable(connection *sql.DB, database, table string, count int) error
 		return err
 	}
 	if partitioned {
-		return errors.New(fmt.Sprintf("Table %s is already paritioned", table))
+		return fmt.Errorf("table %s is already paritioned", table)
 	}
 
 	// Parse comment
@@ -232,14 +233,12 @@ func PartitionTable(connection *sql.DB, database, table string, count int) error
 				return err
 			}
 
-			return errors.New(
-				fmt.Sprintf(
-					"A PRIMARY KEY must include all columns in the table's partitioning function,"+
-						" existing PRIMARY KEY(%s) should be updated to (%s,`%s`), use `kitana index`",
-					index,
-					index,
-					parsedComment.Column,
-				),
+			return fmt.Errorf(
+				"A PRIMARY KEY must include all columns in the table's partitioning function,"+
+					" existing PRIMARY KEY(%s) should be updated to (%s,`%s`), use `kitana index`",
+				index,
+				index,
+				parsedComment.Column,
 			)
 		}
 

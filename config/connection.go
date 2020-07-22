@@ -5,8 +5,9 @@ import (
 	"time"
 )
 
-var db *sql.DB = nil
+var db *sql.DB
 
+// Connect connection to database
 func Connect() (*sql.DB, error) {
 	if db == nil {
 		conn, err := sql.Open("mysql", Configuration.MySQL().FormatDSN())

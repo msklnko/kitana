@@ -41,6 +41,7 @@ func ShowCreateTable(db *sql.DB, database, table string) error {
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
 	desc, err := db.Query(query)
+	defer desc.Close()
 	if err != nil {
 		return err
 	}
@@ -100,6 +101,7 @@ func ShowTables(db *sql.DB, database string, comment, part bool) ([]Table, error
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
 	tables, err := db.Query(query)
+	defer tables.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +119,7 @@ func ShowTables(db *sql.DB, database string, comment, part bool) ([]Table, error
 	var rows [][]interface{}
 	for tables.Next() {
 		row := make([]interface{}, len(columns))
-		for i, _ := range columns {
+		for i := range columns {
 			row[i] = new(sql.NullString)
 		}
 		if err := tables.Scan(row...); err != nil {
@@ -185,7 +187,7 @@ func GetPrimaryIndex(db *sql.DB, database, table string) (string, error) {
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
 	rows, err := db.Query(query)
-
+	defer rows.Close()
 	if err != nil {
 		return "", err
 	}
@@ -215,7 +217,7 @@ func GetPartitions(db *sql.DB, database, table string) ([]Partition, bool, strin
 	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
 	rows, err := db.Query(query)
-
+	defer rows.Close()
 	if err != nil {
 		return nil, false, "", err
 	}

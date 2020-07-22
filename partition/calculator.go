@@ -10,11 +10,16 @@ import (
 	"github.com/msklnko/kitana/definition"
 )
 
+// Prefix prefix for partition name
 const Prefix = "part"
+
+// MonthFormat date format
 const MonthFormat = "200601"
+
+// DayFormat date format
 const DayFormat = "20060102"
 
-// Next Calculate next partition name and time
+// NextOne Calculate next partition name and time
 func NextOne(tp definition.Type, logger xray.Ray) (*string, *time.Time, error) {
 	logger.Debug("calculating next partition name and limiter, type :type", args.Type(tp))
 	if tp == definition.Ml {
@@ -42,7 +47,7 @@ func nextDaily() (*string, *time.Time) {
 	return &name, &limiter
 }
 
-// Next Calculate next partition name and time
+// NextSeveral Calculate next partition name and time
 func NextSeveral(tp definition.Type, count int, withCurrent bool, logger xray.Ray) (map[string]time.Time, error) {
 	logger.Debug("calculating current partition name and limiter, type :type", args.Type(tp))
 	if tp == definition.Ml {
