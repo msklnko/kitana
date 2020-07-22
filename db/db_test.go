@@ -30,7 +30,7 @@ func TestSqlPartitionTable(t *testing.T) {
 	assert.Equalf(
 		t,
 		query,
-		"alter table database.table partition by range (createdAt) (partition first values less than (1),partition second values less than (2))",
+		"alter table database.table partition by range (`createdAt`) (partition first values less than (1),partition second values less than (2))",
 		"Two queries should be the same.",
 	)
 }
