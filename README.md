@@ -3,17 +3,21 @@ Partition management tool
 
 # How to run
   - `git clone https://github.com/msklnko/kitana.git`
+  -  Configure`./settings.yaml`
   - `go install .`
   - `kitana`
 
 # Usage
   
   __Available Commands:__
-   - __cmt__:         Add comment to provided table in supported format [GM:C:T:R:Rc]
-   - __daemon__:      Run partitioning in daemon
-   - __help__:        Help about any command
-   - __prt__:         Used either to obtain information about information_schema.partitions
-   - __show__:        Show all tables
+- __comment__:     Add comment to provided table in supported format [GM:C:T:R:Rc] (example: `kitana comment database.table [GM:createdAt:dl:d:4]`)
+- __daemon__:      Run partitioning in daemon (example: `kitana daemon database`)
+- __help__:        Help about any command
+- __index__:       Update primary index (example: `kitana index database.table column1,column2`)
+- __partition__:   Used either to obtain information about partitions
+- __show__:        Show all tables from database (example: `kitana show database`)
+- __test__:        Tests given string as table comment
+
   
   __Show partitions:__
   - `kitana show database`
