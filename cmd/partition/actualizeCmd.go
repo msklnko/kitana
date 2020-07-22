@@ -53,8 +53,8 @@ var actualizeCmd = &cobra.Command{
 func init() {
 	actualizeCmd.Flags().BoolVarP(
 		&actualizeForceDelete,
-		"alter",
-		"a",
+		"forceDelete",
+		"f",
 		false,
 		"Delete partitions with one alter",
 	)
