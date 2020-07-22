@@ -66,8 +66,9 @@ func nextMonths(count int, withCurrent bool) map[string]time.Time {
 	}
 	result := make(map[string]time.Time)
 	for i := 0; i <= count; i++ {
+		name := Prefix + date.Format(MonthFormat)
 		date = date.AddDate(0, 1, 0)
-		result[Prefix+date.Format(MonthFormat)] = now.New(date).BeginningOfMonth()
+		result[name] = now.New(date).BeginningOfMonth()
 	}
 	return result
 }
@@ -79,8 +80,9 @@ func nextDays(count int, withCurrent bool) map[string]time.Time {
 	}
 	result := make(map[string]time.Time)
 	for i := 0; i <= count; i++ {
-		date = date.AddDate(0, 1, 0)
-		result[Prefix+date.Format(MonthFormat)] = now.New(date).BeginningOfMonth()
+		name := Prefix + date.Format(DayFormat)
+		date = date.AddDate(0, 0, 1)
+		result[name] = now.New(date).BeginningOfDay()
 	}
 	return result
 }

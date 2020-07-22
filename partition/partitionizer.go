@@ -23,18 +23,14 @@ func ManagePartitions(
 	dropInterval time.Duration,
 	logger xray.Ray,
 ) error {
-	partitions, exist, comment, err := db.GetPartitions(connection, database, table)
+	partitions, partitioned, comment, err := db.GetPartitions(connection, database, table)
 
 	if err != nil {
 		return err
 	}
 
-	if !exist {
-		return errors.New("table " + database + "." + table + " doesn't exist\n")
-	}
-
-	if len(partitions) == 0 {
-		return errors.New("table " + database + "." + table + " is not partitioned\n")
+	if !partitioned {
+		return fmt.Errorf("table %s.%s is not partitioned, but commented %s", database, table, comment)
 	}
 
 	// Parse comment
@@ -47,11 +43,19 @@ func ManagePartitions(
 	switch len(strings.TrimPrefix(partitions[0].Name, Prefix)) {
 	case len(DayFormat):
 		if definition.Dl != rule.PartitionType {
-			return errors.New("table was partitioned daily, but comment has monthly partition configuration")
+			return fmt.Errorf(
+				"table %s.%s was partitioned daily, but comment has monthly partition configuration",
+				database,
+				table,
+			)
 		}
 	case len(MonthFormat):
 		if definition.Ml != rule.PartitionType {
-			return errors.New("table was partitioned monthly, but comment has daily partition configuration")
+			return fmt.Errorf(
+				"table %s.%s was partitioned monthly, but comment has daily partition configuration",
+				database,
+				table,
+			)
 		}
 	default:
 		return errors.New("undefined partition type, should be daily or monthly partitioned")
