@@ -34,24 +34,24 @@ Partition management tool
   
   #### __Partition:__
   
-    ___Drop partition:___
-    - `kitana partition status database.table`
-    - `kitana partition drop database.table part202006 -s`
+      ___Drop partition:___
+     - `kitana partition status database.table`
+     - `kitana partition drop database.table part202006 -s`
   
-    ___Add partition:___
-    - `kitana partition add database.table part202008 1598961600 -s`
+      ___Add partition:___
+     - `kitana partition add database.table part202008 1598961600 -s`
    
-    ___Actualize partitions:___
-    - `kitana partition actualize database.table` 
-     - -d - Drop partitions interval (default 500ms)
-     - -f - Force delete all expired partitions (by default drop partitions would be one by one with default interval 500ms)
+      ___Actualize partitions:___
+     - `kitana partition actualize database.table` 
+      - -d - Drop partitions interval (default 500ms)
+      - -f - Force delete all expired partitions (by default drop partitions would be one by one with default interval 500ms)
      
-    ___Partition table:___
-    - `kitana partition create database.table`
-     - -c - Number of partitions to create in advance, default = 3 (default 3)
+      ___Partition table:___
+     - `kitana partition create database.table`
+      - -c - Number of partitions to create in advance, default = 3 (default 3)
     
-    ___Partitions status:___
-    - `kitana partition status database.table`
+      ___Partitions status:___
+     - `kitana partition status database.table`
     
   __Update primary index:__  
   - `kitana index database.table column1,column2` 
