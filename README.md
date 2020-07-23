@@ -33,30 +33,34 @@ Partition management tool
   - `kitana test [GM:createdAt:ml:b:4]`
   
   __Partition:__
-    __Drop partition:__
+    ___Drop partition:___
     - `kitana partition status database.table`
     - `kitana partition drop database.table part202006 -s`
   
-    __Add partition:__
+    ___Add partition:___
     - `kitana partition add database.table part202008 1598961600 -s`
    
-    __Actualize partitions:__
+    ___Actualize partitions:___
     - `kitana partition actualize database.table` 
      - -d - Drop partitions interval (default 500ms)
      - -f - Force delete all expired partitions (by default drop partitions would be one by one with default interval 500ms)
      
-    __Partition table:__
+    ___Partition table:___
     - `kitana partition create database.table`
      - -c - Number of partitions to create in advance, default = 3 (default 3)
     
-    __Partitions status:__
+    ___Partitions status:___
     - `kitana partition status database.table`
+    
+  __Update primary index:__  
+  - `kitana index database.table column1,column2` 
   
   __Run in daemon:__
+     Every 30 seconds application would check if all necessary partitions are created and old partitions processed in the specified way
   - `kitana daemon database`
    - -d - Daemon drop partitions interval (default 500ms)
    - -f - Force delete all expired partitions (by default drop partitions would be one by one with default interval 500ms)
    - -r - Daemon refresh interval (default 30s). Means kitana would be executed every 30 seconds 
-  
-   Every 30 seconds application would check if all necessary partitions are created and old partitions processed in the specified way
-  - `kitana daemon`
+ 
+   
+ 
