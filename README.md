@@ -32,7 +32,7 @@ Partition management tool
   __Test comment:__
   - `kitana test [GM:createdAt:ml:b:4]`
   
-  ## __Partition:__
+  #### __Partition:__
   
     ___Drop partition:___
     - `kitana partition status database.table`
