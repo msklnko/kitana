@@ -18,6 +18,13 @@ Partition management tool
 - __show__:        Show all tables from database (example: `kitana show database`)
 - __test__:        Tests given string as table comment
 
+# Comment format [GM:C:T:R:Rc]
+   GM - identifier
+   C - column name for partitioning
+   T - partitioning type, ml for monthly, dl for daily
+   R - retention policy - d (drop), n (none), b (backup)
+   Rc - retention policy old partitions count
+
   
   __Show partitions:__
   - `kitana show database`
