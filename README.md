@@ -20,11 +20,11 @@ Partition management tool
 
 # Comment format [GM:C:T:R:Rc]
 
-   __GM - identifier__
-   __C - column name for partitioning__
-   __T - partitioning type, ml for monthly, dl for daily__
-   __R - retention policy - d (drop), n (none), b (backup)__
-   __Rc - retention policy old partitions count__
+  - __GM__ - identifier
+  - __C__ - column name for partitioning
+  - __T__ - partitioning type, ml for monthly, dl for daily
+  - __R__ - retention policy - d (drop), n (none), b (backup)
+  - __Rc__ - retention policy old partitions count
 
   
   __Show partitions:__
