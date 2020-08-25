@@ -7,6 +7,14 @@ Partition management tool
   - `go install .`
   - `kitana`
 
+# Comment format [GM:C:T:R:Rc]
+
+  - __GM__ - identifier
+  - __C__ - column name for partitioning
+  - __T__ - partitioning type, ml for monthly, dl for daily
+  - __R__ - retention policy - d (drop), n (none), b (backup)
+  - __Rc__ - retention policy old partitions count
+
 # Usage
   
   __Available Commands:__
@@ -17,15 +25,6 @@ Partition management tool
 - __partition__:   Used either to obtain information about partitions
 - __show__:        Show all tables from database (example: `kitana show database`)
 - __test__:        Tests given string as table comment
-
-# Comment format [GM:C:T:R:Rc]
-
-  - __GM__ - identifier
-  - __C__ - column name for partitioning
-  - __T__ - partitioning type, ml for monthly, dl for daily
-  - __R__ - retention policy - d (drop), n (none), b (backup)
-  - __Rc__ - retention policy old partitions count
-
   
   __Show partitions:__
   - `kitana show database`
