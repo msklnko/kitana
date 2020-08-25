@@ -19,11 +19,12 @@ Partition management tool
 - __test__:        Tests given string as table comment
 
 # Comment format [GM:C:T:R:Rc]
-   GM - identifier
-   C - column name for partitioning
-   T - partitioning type, ml for monthly, dl for daily
-   R - retention policy - d (drop), n (none), b (backup)
-   Rc - retention policy old partitions count
+
+   __GM - identifier__
+   __C - column name for partitioning__
+   __T - partitioning type, ml for monthly, dl for daily__
+   __R - retention policy - d (drop), n (none), b (backup)__
+   __Rc - retention policy old partitions count__
 
   
   __Show partitions:__
