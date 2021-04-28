@@ -68,6 +68,10 @@ Partition management tool
    - -d - Daemon drop partitions interval (default 500ms)
    - -f - Force delete all expired partitions (by default drop partitions would be one by one with default interval 500ms)
    - -r - Daemon refresh interval (default 30s). Means kitana would be executed every 30 seconds 
+
+  __Mysql user rights:__
+    SELECT, DELETE, CREATE, DROP, ALTER
+     
  
    
  
