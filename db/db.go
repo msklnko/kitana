@@ -96,47 +96,51 @@ func sqlTableStatus(database string, comment, part bool) string {
 }
 
 // ShowTables Show tables for db schema
-func ShowTables(db *sql.DB, database string, comment, part bool) ([]Table, error) {
-	var query = sqlTableStatus(database, comment, part)
-	xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
+func ShowTables(db *sql.DB, databases []string, comment, part bool) ([]Table, error) {
 
-	tables, err := db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer tables.Close()
+	var result []Table
+	for _, database := range databases {
+		var query = sqlTableStatus(database, comment, part)
+		xray.ROOT.Fork().Trace("Executing :sql", args.SQL(query))
 
-	columns, err := tables.Columns()
-	if err != nil {
-		return nil, err
-	}
-
-	nameIndex := util.IndexOf("Name", columns)
-	commentIndex := util.IndexOf("Comment", columns)
-
-	var count int
-
-	var rows [][]interface{}
-	for tables.Next() {
-		row := make([]interface{}, len(columns))
-		for i := range columns {
-			row[i] = new(sql.NullString)
-		}
-		if err := tables.Scan(row...); err != nil {
+		tables, err := db.Query(query)
+		if err != nil {
 			return nil, err
 		}
-		rows = append(rows, row)
-		count++
-	}
+		defer tables.Close()
 
-	result := make([]Table, count)
-	for i := 0; i < len(rows); i++ {
-		r := rows[i]
+		columns, err := tables.Columns()
+		if err != nil {
+			return nil, err
+		}
 
-		result[i] = Table{
-			Database: database,
-			Name:     r[nameIndex].(*sql.NullString).String,
-			Comment:  r[commentIndex].(*sql.NullString).String,
+		nameIndex := util.IndexOf("Name", columns)
+		commentIndex := util.IndexOf("Comment", columns)
+
+		var count int
+
+		var rows [][]interface{}
+		for tables.Next() {
+			row := make([]interface{}, len(columns))
+			for i := range columns {
+				row[i] = new(sql.NullString)
+			}
+			if err := tables.Scan(row...); err != nil {
+				return nil, err
+			}
+			rows = append(rows, row)
+			count++
+		}
+
+		//result := make([]Table, count)
+		for i := 0; i < len(rows); i++ {
+			r := rows[i]
+
+			result = append(result, Table{
+				Database: database,
+				Name:     r[nameIndex].(*sql.NullString).String,
+				Comment:  r[commentIndex].(*sql.NullString).String,
+			})
 		}
 	}
 	return result, nil

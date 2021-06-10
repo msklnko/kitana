@@ -17,8 +17,8 @@ import (
 // comment - show only commented table
 // part - show only partitioned tables
 // def - print comment definition
-func ShowTables(connection *sql.DB, database string, comment, part, def bool, logger xray.Ray) error {
-	tables, err := db.ShowTables(connection, database, comment, part)
+func ShowTables(connection *sql.DB, databases []string, comment, part, def bool, logger xray.Ray) error {
+	tables, err := db.ShowTables(connection, databases, comment, part)
 
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func ShowTables(connection *sql.DB, database string, comment, part, def bool, lo
 					}
 				}
 			})
-		fmt.Println("[", database, "] Count :", len(tables))
+		fmt.Println("Databases:", databases, ", Count :", len(tables))
 	}
 	return nil
 }

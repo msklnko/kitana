@@ -16,17 +16,12 @@ var showCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		xray.ROOT.Info("Incoming request `show tables`")
 
-		var database = ""
-		if len(args) > 0 {
-			database = args[0]
-		}
-
 		db, err := config.Connect()
 		if err != nil {
 			return err
 		}
 
-		return partition.ShowTables(db, database, commented, partitioned, description, xray.ROOT.Fork())
+		return partition.ShowTables(db, args, commented, partitioned, description, xray.ROOT.Fork())
 	},
 }
 

@@ -13,7 +13,7 @@ import (
 // ManageAllDatabasePartitions checking all tables partitioning
 func ManageAllDatabasePartitions(
 	connection *sql.DB,
-	database string,
+	database []string,
 	forceDelete bool,
 	refreshInterval time.Duration,
 	dropInterval time.Duration,
