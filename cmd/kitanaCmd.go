@@ -15,5 +15,6 @@ func init() {
 		commentCmd,
 		daemonCmd,
 		testCmd,
+		indexCmd,
 	)
 }

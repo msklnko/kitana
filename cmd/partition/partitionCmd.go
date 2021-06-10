@@ -24,5 +24,6 @@ func init() {
 		addCmd,
 		dropCmd,
 		actualizeCmd,
+		createCmd,
 	)
 }

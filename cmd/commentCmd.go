@@ -2,14 +2,17 @@ package cmd
 
 import (
 	"errors"
+	"github.com/msklnko/kitana/partition"
 	"strings"
 
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/db"
 	"github.com/msklnko/kitana/definition"
 	"github.com/spf13/cobra"
 )
 
 var commentShowCreate bool
+var commentForcePartition bool
 var commentRules = `Comment format: [GM:C:T:R:Rc] where  
     GM - identifier
     C - column name for partitioning 
@@ -20,7 +23,7 @@ var commentRules = `Comment format: [GM:C:T:R:Rc] where
 var commentCmd = &cobra.Command{
 	Use:     "comment",
 	Aliases: []string{"addComment", "cmt"},
-	Short:   "Add comment to provided table in supported format [GM:C:T:R:Rc]",
+	Short:   "Add comment to provided table in supported format [GM:C:T:R:Rc] (example: `kitana comment database.table [GM:createdAt:dl:d:4]`)",
 	Long:    commentRules,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 2 {
@@ -38,12 +41,25 @@ var commentCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var arguments = strings.Split(args[0], ".")
-		if err := db.AlterComment(arguments[0], arguments[1], args[1]); err != nil {
+
+		connection, err := config.Connect()
+		if err != nil {
 			return err
 		}
 
+		if err := db.AlterComment(connection, arguments[0], arguments[1], args[1]); err != nil {
+			return err
+		}
+
+		if commentForcePartition {
+			err = partition.PartitionTable(connection, arguments[0], arguments[1], 3)
+			if err != nil {
+				return err
+			}
+		}
+
 		if commentShowCreate {
-			return db.ShowCreateTable(arguments[0], arguments[1])
+			return db.ShowCreateTable(connection, arguments[0], arguments[1])
 		}
 		return nil
 	},
@@ -51,4 +67,5 @@ var commentCmd = &cobra.Command{
 
 func init() {
 	commentCmd.Flags().BoolVarP(&commentShowCreate, "show", "s", false, "Show create table after alter")
+	commentCmd.Flags().BoolVarP(&commentForcePartition, "forcePartition", "f", false, "Force table partitioning")
 }

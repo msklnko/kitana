@@ -2,17 +2,19 @@ package partition
 
 import (
 	"errors"
+	"github.com/msklnko/kitana/config"
+	"github.com/msklnko/kitana/partition"
 	"strings"
 
-	"github.com/mono83/xray"
-	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
 )
+
+var createCountNewPartitions int
 
 var createCmd = &cobra.Command{
 	Use:     "create",
 	Aliases: []string{""},
-	Short:   "Actualize partitions for defined table",
+	Short:   "Partition defined table",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("table name is required")
@@ -24,20 +26,24 @@ var createCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		splitted := strings.Split(args[0], ".")
-		if err := partition.ManagePartitions(splitted[0], splitted[1], forceDelete, xray.ROOT.Fork()); err != nil {
+		var tables = strings.Split(args[0], ".")
+
+		connection, err := config.Connect()
+		if err != nil {
 			return err
 		}
-		return nil
+
+		err = partition.PartitionTable(connection, tables[0], tables[1], createCountNewPartitions)
+		return err
 	},
 }
 
 func init() {
-	createCmd.Flags().BoolVarP(
-		&forceDelete,
-		"forceDelete",
-		"f",
-		false,
-		"Delete partitions with one alter",
+	createCmd.Flags().IntVarP(
+		&createCountNewPartitions,
+		"count",
+		"c",
+		3,
+		"Number of partitions to create in advance, default = 3",
 	)
 }

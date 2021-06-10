@@ -20,7 +20,7 @@ var Configuration Config
 func init() {
 	c, err := Read()
 	if err != nil {
-		panic(err)
+		panic(config.ExpandErrorMessage(err))
 	}
 
 	Configuration = *c

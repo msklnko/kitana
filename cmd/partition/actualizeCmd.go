@@ -3,18 +3,21 @@ package partition
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/mono83/xray"
+	"github.com/msklnko/kitana/config"
 	"github.com/msklnko/kitana/partition"
 	"github.com/spf13/cobra"
 )
 
-var forceDelete bool
+var actualizeForceDelete bool
+var actualizeDropInterval time.Duration
 
 var actualizeCmd = &cobra.Command{
 	Use:     "actualize",
 	Aliases: []string{"update", "manage"},
-	Short:   "Actualize partitions for defined table",
+	Short:   "Actualize partitions for defined table (example: `kitana partition actualize database.table`)",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("table name is required")
@@ -27,7 +30,20 @@ var actualizeCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		splitted := strings.Split(args[0], ".")
-		if err := partition.ManagePartitions(splitted[0], splitted[1], forceDelete, xray.ROOT.Fork()); err != nil {
+
+		connection, err := config.Connect()
+		if err != nil {
+			return err
+		}
+
+		if err := partition.ManagePartitions(
+			connection,
+			splitted[0],
+			splitted[1],
+			actualizeForceDelete,
+			actualizeDropInterval,
+			xray.ROOT.Fork(),
+		); err != nil {
 			return err
 		}
 		return nil
@@ -36,10 +52,18 @@ var actualizeCmd = &cobra.Command{
 
 func init() {
 	actualizeCmd.Flags().BoolVarP(
-		&forceDelete,
+		&actualizeForceDelete,
 		"forceDelete",
 		"f",
 		false,
 		"Delete partitions with one alter",
+	)
+
+	actualizeCmd.Flags().DurationVarP(
+		&actualizeDropInterval,
+		"dropInterval",
+		"d",
+		500*time.Millisecond,
+		"Daemon drop partitions interval",
 	)
 }

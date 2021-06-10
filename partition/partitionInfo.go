@@ -1,6 +1,7 @@
 package partition
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"text/tabwriter"
@@ -16,8 +17,8 @@ import (
 // comment - show only commented table
 // part - show only partitioned tables
 // def - print comment definition
-func ShowTables(database string, comment, part, def bool, logger xray.Ray) error {
-	tables, err := db.ShowTables(database, comment, part)
+func ShowTables(connection *sql.DB, database string, comment, part, def bool, logger xray.Ray) error {
+	tables, err := db.ShowTables(connection, database, comment, part)
 
 	if err != nil {
 		return err
@@ -50,19 +51,14 @@ func ShowTables(database string, comment, part, def bool, logger xray.Ray) error
 }
 
 // PartitionsInfo Print info about partitions
-func PartitionsInfo(database, table string) error {
-	parsed, exist, _, err := db.GetPartitions(database, table)
+func PartitionsInfo(connection *sql.DB, database, table string) error {
+	parsed, partitioned, _, err := db.GetPartitions(connection, database, table)
 	if err != nil {
 		return err
 	}
 
-	// Table does not exist
-	if !exist {
-		return errors.New("Table '" + database + "." + table + " doesn't exist")
-	}
-
 	// Table is not partitioned
-	if exist && len(parsed) == 0 {
+	if !partitioned {
 		return errors.New("Table '" + database + "." + table + " is not partitioned")
 	}
 
