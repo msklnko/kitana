@@ -33,7 +33,7 @@ var createCmd = &cobra.Command{
 }
 
 func init() {
-	actualizeCmd.Flags().BoolVarP(
+	createCmd.Flags().BoolVarP(
 		&forceDelete,
 		"forceDelete",
 		"f",
